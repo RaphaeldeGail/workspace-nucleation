@@ -1,0 +1,8 @@
+# terraform working directory
+.terraform
+# output of terraform plans
+plan.out
+# local terraform states (and backups)
+*.tfstate*
+# private key
+.rootkey.json
