@@ -91,52 +91,13 @@ resource "google_storage_bucket" "root_bucket" {
   }
 }
 
-resource "google_service_account" "root_account" {
-  /**
-   * Root service account.
-   * Will be granted org admin role.
-   }
-   */
-  account_id   = google_project.root_project.project_id
-  display_name = "Root Account"
-  description  = "This service account has full acces to the organization.}"
-  project      = google_project.root_project.project_id
-}
+module "service_account" {
+  source   = "./modules/service account"
+  for_each = var.service_accounts
 
-resource "google_service_account_key" "root_key" {
-  /**
-   * Secret private for the root service account.
-   * Highly criticial.
-   */
-  service_account_id = google_service_account.root_account.name
-}
-
-resource "google_storage_bucket_iam_binding" "root_bucket_editors" {
-  /**
-   * Only the root service account will have read/write access to the bucket.
-   */
-  bucket = google_storage_bucket.root_bucket.name
-  role   = "roles/storage.legacyBucketWriter"
-  members = [
-    "serviceAccount:${google_service_account.root_account.email}",
-  ]
-}
-
-resource "google_organization_iam_member" "org_admin" {
-  /**
-   * Root service account is granted org admin role.
-   */
-  org_id = data.google_organization.org.org_id
-  role   = "roles/resourcemanager.organizationAdmin"
-  member = "serviceAccount:${google_service_account.root_account.email}"
-}
-
-resource "google_storage_bucket_object" "private_key" {
-  /**
-   * Root private key is uploaded to root bucket in JSON format.
-   */
-  name         = "rootkey.json"
-  content      = base64decode(google_service_account_key.root_key.private_key)
-  content_type = "application/json; charset=utf-8"
-  bucket       = google_storage_bucket.root_bucket.name
+  full_name   = each.key
+  description = each.value.description
+  role        = each.value.role
+  project_id  = google_project.root_project.project_id
+  bucket_name = google_storage_bucket.root_bucket.name
 }

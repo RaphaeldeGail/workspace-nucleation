@@ -4,5 +4,3 @@
 plan.out
 # local terraform states (and backups)
 *.tfstate*
-# private key
-.rootkey.json

@@ -21,19 +21,16 @@ A Google Storage bucket is also created to store any critical files related to t
 
 ## Modules
 
-No modules.
+| Name | Source | Version |
+|------|--------|---------|
+| service\_account | ./modules/service account | n/a |
 
 ## Resources
 
 | Name | Type |
 |------|------|
-| [google_organization_iam_member.org_admin](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/organization_iam_member) | resource |
 | [google_project.root_project](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/project) | resource |
-| [google_service_account.root_account](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/service_account) | resource |
-| [google_service_account_key.root_key](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/service_account_key) | resource |
 | [google_storage_bucket.root_bucket](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/storage_bucket) | resource |
-| [google_storage_bucket_iam_binding.root_bucket_editors](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/storage_bucket_iam_binding) | resource |
-| [google_storage_bucket_object.private_key](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/storage_bucket_object) | resource |
 | [random_string.random](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/string) | resource |
 | [google_billing_account.primary_account](https://registry.terraform.io/providers/hashicorp/google/latest/docs/data-sources/billing_account) | data source |
 | [google_organization.org](https://registry.terraform.io/providers/hashicorp/google/latest/docs/data-sources/organization) | data source |
@@ -46,6 +43,7 @@ No modules.
 | location | Geographical *location* for Google Cloud Platform. | `string` | n/a |
 | organization | Name of the organization hosting the workspace. | `string` | n/a |
 | region | Geographical *region* for Google Cloud Platform. | `string` | n/a |
+| service\_accounts | List of service accounts along with their privileges. Only underscore, digits and lowercase letters are allowed for the key. | ```map(object({ description = string role = string }))``` | n/a |
 
 ## Outputs
 
