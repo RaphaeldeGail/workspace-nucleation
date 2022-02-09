@@ -101,3 +101,11 @@ module "service_account" {
   project_id  = google_project.root_project.project_id
   bucket_name = google_storage_bucket.root_bucket.name
 }
+
+resource "google_project_service" "service" {
+  project = google_project.root_project.project_id
+  service = "orgpolicy.googleapis.com"
+
+  disable_dependent_services = true
+  disable_on_destroy         = true
+}
