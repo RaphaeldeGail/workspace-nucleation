@@ -21,21 +21,9 @@ variable "description" {
   nullable    = true
 }
 
-variable "role" {
-  type        = string
-  description = "role bound to the service account."
-  nullable    = false
-}
-
 variable "bucket_name" {
   type        = string
-  description = "Name of the bucket for service account key backup."
-  nullable    = false
-}
-
-variable "enable_key" {
-  type        = bool
-  description = "If set to true, a private key in JSON format will be generated for the service account authentication and stored in a bucket."
-  default     = false
+  description = "Name of the bucket for service account key backup. If a non-null value is given, a private key for the service account will be created and upload to the bucket."
+  default     =  null
   nullable    = true
 }

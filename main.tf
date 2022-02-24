@@ -62,7 +62,7 @@ resource "google_project" "root_project" {
    * Root project of the organization.
    */
   name            = "root"
-  project_id      = "root-${random_string.random.result}"
+  project_id      = join("-", ["root", random_string.random.result])
   org_id          = data.google_organization.org.org_id
   billing_account = data.google_billing_account.primary_account.id
   labels = {
@@ -76,7 +76,7 @@ resource "google_storage_bucket" "root_bucket" {
   /**
    * Root bucket for the root project.
    */
-  name                        = "root-bucket-${random_string.random.result}"
+  name                        = join("-", ["root", "bucket", random_string.random.result])
   location                    = var.location
   project                     = google_project.root_project.project_id
   force_destroy               = false
@@ -95,12 +95,18 @@ module "service_account" {
   source   = "./modules/service account"
   for_each = var.service_accounts
 
-  enable_key  = true
   full_name   = each.key
   description = each.value.description
-  role        = each.value.role
   project_id  = google_project.root_project.project_id
   bucket_name = google_storage_bucket.root_bucket.name
+}
+
+resource "google_organization_iam_member" "service_acount_role" {
+  for_each = var.service_accounts
+
+  org_id = data.google_organization.org.org_id
+  role   = join("/", ["roles", each.value.role])
+  member = "serviceAccount:${module.service_account[each.key].service_account_email}"
 }
 
 resource "google_project_service" "service" {

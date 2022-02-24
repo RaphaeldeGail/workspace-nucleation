@@ -57,10 +57,10 @@ then
     echo '*WARNING: no infrastructure modifications are scheduled in this plan!'
 fi
 
-echo '*Terraform Apply'
-if ! terraform apply -no-color plan.out; then
-    exit 1
-fi
-echo '*OK (Terraform Apply)'
+# echo '*Terraform Apply'
+# if ! terraform apply -no-color plan.out; then
+#     exit 1
+# fi
+# echo '*OK (Terraform Apply)'
 
 echo "*end: $(date)"
