@@ -33,6 +33,7 @@ resource "google_service_account" "service_account" {
 }
 
 resource "google_service_account_key" "service_account_key" {
+  count              = var.enable_key ? 1 : 0
   service_account_id = google_service_account.service_account.name
 }
 
@@ -43,8 +44,9 @@ resource "google_organization_iam_member" "service_acount_role" {
 }
 
 resource "google_storage_bucket_object" "service_account_key_backup" {
+  count        = var.enable_key ? 1 : 0
   name         = "accounts/${local.lowercase_name}.json"
-  content      = base64decode(google_service_account_key.service_account_key.private_key)
+  content      = base64decode(google_service_account_key.service_account_key[0].private_key)
   content_type = "application/json; charset=utf-8"
   bucket       = var.bucket_name
 }

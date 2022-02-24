@@ -32,3 +32,10 @@ variable "bucket_name" {
   description = "Name of the bucket for service account key backup."
   nullable    = false
 }
+
+variable "enable_key" {
+  type        = bool
+  description = "If set to true, a private key in JSON format will be generated for the service account authentication and stored in a bucket."
+  default     = false
+  nullable    = true
+}

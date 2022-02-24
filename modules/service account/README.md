@@ -32,6 +32,7 @@ No modules.
 |------|-------------|------|---------|
 | bucket\_name | Name of the bucket for service account key backup. | `string` | n/a |
 | description | Optional description of the service account. | `string` | n/a |
+| enable\_key | If set to true, a private key in JSON format will be generated for the service account authentication and stored in a bucket. | `bool` | `false` |
 | full\_name | Name of the service account. May only contain underscore, digits and lowercase letters. | `string` | n/a |
 | project\_id | ID of the project hosting the service account. | `string` | n/a |
 | role | role bound to the service account. | `string` | n/a |

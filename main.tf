@@ -95,6 +95,7 @@ module "service_account" {
   source   = "./modules/service account"
   for_each = var.service_accounts
 
+  enable_key  = true
   full_name   = each.key
   description = each.value.description
   role        = each.value.role
