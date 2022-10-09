@@ -24,6 +24,18 @@ variable "description" {
 variable "bucket_name" {
   type        = string
   description = "Name of the bucket for service account key backup. If a non-null value is given, a private key for the service account will be created and upload to the bucket."
-  default     =  null
+  default     = null
   nullable    = true
+}
+
+variable "roles" {
+  type        = list(string)
+  description = "A list of organization-scoped roles for the service account."
+  nullable    = false
+}
+
+variable "org_id" {
+  type        = string
+  description = "The organization ID as a string."
+  nullable    = false
 }

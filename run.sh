@@ -9,12 +9,12 @@ export ENV="None"
 echo "*start: $(date)"
 
 # clean code before verifications
-terraform fmt
+terraform fmt -recursive .
 terraform-docs .
 
 echo '*Terraform Format'
-if ! terraform fmt -check -list=false; then
-    terraform fmt -check -diff
+if ! terraform fmt -check -list=false -recursive .; then
+    terraform fmt -check -diff -recursive .
     exit 1
 fi
 echo '*OK (Terraform Format)'
@@ -57,10 +57,10 @@ then
     echo '*WARNING: no infrastructure modifications are scheduled in this plan!'
 fi
 
-# echo '*Terraform Apply'
-# if ! terraform apply -no-color plan.out; then
-#     exit 1
-# fi
-# echo '*OK (Terraform Apply)'
+echo '*Terraform Apply'
+if ! terraform apply -no-color plan.out; then
+    exit 1
+fi
+echo '*OK (Terraform Apply)'
 
 echo "*end: $(date)"

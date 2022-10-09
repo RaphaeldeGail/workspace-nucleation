@@ -25,7 +25,7 @@ variable "region" {
 variable "service_accounts" {
   type = map(object({
     description = string
-    role        = string
+    roles       = list(string)
   }))
   description = "List of service accounts along with their privileges. Only underscore, digits and lowercase letters are allowed for the key."
   nullable    = false
