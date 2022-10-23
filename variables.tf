@@ -1,6 +1,6 @@
 variable "billing_account" {
   type        = string
-  description = "Name of the billing account used for the workspace. \"Billing account User\" permissions are required to execute module."
+  description = "The ID of the billing account used for the workspace."
   nullable    = false
 }
 

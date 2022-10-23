@@ -44,11 +44,6 @@ data "google_organization" "org" {
   domain = var.organization
 }
 
-data "google_billing_account" "primary_account" {
-  display_name = var.billing_account
-  open         = true
-}
-
 resource "random_string" "random" {
   /** 
    * Random string with only lowercase letters and integers.
@@ -71,7 +66,7 @@ resource "google_project" "root_project" {
   name            = "root"
   project_id      = join("-", ["root", random_string.random.result])
   org_id          = data.google_organization.org.org_id
-  billing_account = data.google_billing_account.primary_account.id
+  billing_account = var.billing_account
   labels = {
     root = true
   }
@@ -96,11 +91,6 @@ resource "google_storage_bucket" "root_bucket" {
 }
 
 resource "google_folder" "root_folder" {
-  /*
-  Required
-    display_name (String) The folder’s display name. A folder’s display name must be unique amongst its siblings, e.g. no two folders with the same parent can share the same display name. The display name must start and end with a letter or digit, may contain letters, digits, spaces, hyphens and underscores and can be no longer than 30 characters.
-    parent (String) The resource name of the parent Folder or Organization. Must be of the form folders/{folder_id} or organizations/{org_id}.
-  */
   display_name = join(" ", ["Root", "Folder"])
   parent       = data.google_organization.org.name
 }
@@ -117,30 +107,10 @@ module "service_account" {
   roles       = each.value.roles
 }
 
-resource "google_folder_iam_binding" "environment_folder_admins" {
-  /*
-  Required
-    member/members (String) Identities that will be granted the privilege in role. Each entry can have one of the following values:
-        user:{emailid}: An email address that represents a specific Google account. For example, alice@gmail.com or joe@example.com.
-        serviceAccount:{emailid}: An email address that represents a service account. For example, my-other-app@appspot.gserviceaccount.com.
-        group:{emailid}: An email address that represents a Google group. For example, admins@example.com.
-        domain:{domain}: A G Suite domain (primary, instead of alias) name that represents all the users of that domain. For example, google.com or example.com.
-    role (String) The role that should be applied. Only one google_folder_iam_binding can be used per role. Note that custom roles must be of the format organizations/{{org_id}}/roles/{{role_id}}.
-    folder (String) The resource name of the folder the policy is attached to. Its format is folders/{folder_id}.
-
-  Optional
-    condition (Block) An IAM Condition for a given binding. Structure is documented below.
-      Required
-        expression (String) Textual representation of an expression in Common Expression Language syntax.
-        title (String) A title for the expression, i.e. a short string describing its purpose.
-      Optional
-        description (String) An optional description of the expression. This is a longer text which describes the expression, e.g. when hovered over it in a UI.
-  */
+resource "google_folder_iam_member" "root_folder_admins" {
   folder = google_folder.root_folder.name
   role   = "roles/resourcemanager.folderAdmin"
-  members = [
-    "serviceAccount:${module.service_account["project_creator"].service_account_email}",
-  ]
+  member = "serviceAccount:${module.service_account["project_creator"].service_account_email}"
 }
 
 resource "google_project_service" "service" {

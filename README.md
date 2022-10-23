@@ -30,19 +30,18 @@ A Google Storage bucket is also created to store any critical files related to t
 | Name | Type |
 |------|------|
 | [google_folder.root_folder](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/folder) | resource |
-| [google_folder_iam_binding.environment_folder_admins](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/folder_iam_binding) | resource |
+| [google_folder_iam_member.root_folder_admins](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/folder_iam_member) | resource |
 | [google_project.root_project](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/project) | resource |
 | [google_project_service.service](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/project_service) | resource |
 | [google_storage_bucket.root_bucket](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/storage_bucket) | resource |
 | [random_string.random](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/string) | resource |
-| [google_billing_account.primary_account](https://registry.terraform.io/providers/hashicorp/google/latest/docs/data-sources/billing_account) | data source |
 | [google_organization.org](https://registry.terraform.io/providers/hashicorp/google/latest/docs/data-sources/organization) | data source |
 
 ## Inputs
 
 | Name | Description | Type | Default |
 |------|-------------|------|---------|
-| billing\_account | Name of the billing account used for the workspace. "Billing account User" permissions are required to execute module. | `string` | n/a |
+| billing\_account | The ID of the billing account used for the workspace. | `string` | n/a |
 | location | Geographical *location* for Google Cloud Platform. | `string` | n/a |
 | organization | Name of the organization hosting the workspace. | `string` | n/a |
 | region | Geographical *region* for Google Cloud Platform. | `string` | n/a |

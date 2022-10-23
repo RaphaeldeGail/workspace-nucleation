@@ -1,4 +1,4 @@
-billing_account = "Wansho billing account"
+billing_account = "018C3B-328C3D-6B7D4F"
 organization    = "wansho.fr"
 location        = "EU"
 region          = "europe-west1"
