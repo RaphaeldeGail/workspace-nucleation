@@ -36,7 +36,11 @@ provider "random" {
 locals {
   apis = [
     "orgpolicy.googleapis.com",
-    "cloudresourcemanager.googleapis.com"
+    "cloudresourcemanager.googleapis.com",
+    "cloudbilling.googleapis.com",
+    "serviceusage.googleapis.com",
+    "iam.googleapis.com",
+    "cloudidentity.googleapis.com"
   ]
 }
 
@@ -110,6 +114,12 @@ module "service_account" {
 resource "google_folder_iam_member" "root_folder_admins" {
   folder = google_folder.root_folder.name
   role   = "roles/resourcemanager.folderAdmin"
+  member = "serviceAccount:${module.service_account["project_creator"].service_account_email}"
+}
+
+resource "google_folder_iam_member" "root_folder_project_creator" {
+  folder = google_folder.root_folder.name
+  role   = "roles/resourcemanager.projectCreator"
   member = "serviceAccount:${module.service_account["project_creator"].service_account_email}"
 }
 
