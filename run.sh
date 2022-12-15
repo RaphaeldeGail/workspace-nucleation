@@ -1,47 +1,60 @@
 #!/bin/bash
+
+# Terraform settings
 export TF_IN_AUTOMATION="true"
+# The credentials file below should be generated prior to this script execution.
 export GOOGLE_APPLICATION_CREDENTIALS="$HOME/.config/gcloud/application_default_credentials.json"
 export TF_INPUT=0
+# Uncomment the following line to enable DEBUG logging
 #export TF_LOG="debug"
 
-export ENV="None"
 
 echo "*start: $(date)"
 
-# clean code before verifications
-terraform fmt -recursive .
-terraform-docs .
-
-echo '*Terraform Format'
-if ! terraform fmt -check -list=false -recursive .; then
-    terraform fmt -check -diff -recursive .
+echo -ne 'Linting... '
+RC=$(terraform fmt -diff -recursive .)
+if [ $? != 0 ]; then
+    echo 'Lint failed.'
+    echo $RC
     exit 1
 fi
-echo '*OK (Terraform Format)'
+echo 'Lint succesfully done.'
 
-echo '*Terraform Documentation'
-if ! terraform-docs --output-check .; then
+echo -ne 'Documenting... '
+RC=$(terraform-docs .)
+if [ $? != 0 ]; then
+    echo 'Documentation failed.'
+    echo $RC
     exit 1
 fi
-echo '*OK (Terraform Documentation)'
+echo 'Documented.'
 
-echo '*Terraform Init'
-if ! terraform init -reconfigure -no-color; then
+echo -ne 'Initializing working directory... '
+RC=$(terraform init -no-color)
+if [ $? != 0 ]; then
+    echo 'Initialization failed.'
+    echo $RC
     exit 1
 fi
-echo '*OK (Terraform Init)'
+echo 'Working directory initialized.'
 
-echo '*Terraform Validate'
-if ! terraform validate -no-color; then
+echo -ne 'Validating code... '
+RC=$(terraform validate -no-color)
+if [ $? != 0 ]; then
+    echo 'Validation failed.'
+    echo $RC
     exit 1
 fi
-echo '*OK (Terraform Validate)'
+echo 'Code validated.'
 
-echo '*Terraform Plan'
-if ! terraform plan -no-color -out plan.out; then
+echo -ne 'Planning infrastructure update... '
+RC=$(terraform plan -no-color -out plan.out)
+if [ $? != 0 ]; then
+    echo 'Infrastructure plan failed.'
+    echo $RC
     exit 1
 fi
-echo '*OK (Terraform Plan)'
+echo 'Infrastructure update planned.'
 
 apply=0
 for action in $(terraform show -json plan.out | jq .resource_changes[].change.actions[])
@@ -57,10 +70,13 @@ then
     echo '*WARNING: no infrastructure modifications are scheduled in this plan!'
 fi
 
-echo '*Terraform Apply'
-if ! terraform apply -no-color plan.out; then
+echo -ne 'Updating infrastructure... '
+RC=$(terraform apply -no-color plan.out)
+if [ $? != 0 ]; then
+    echo 'Infrastructure update failed.'
+    echo $RC
     exit 1
 fi
-echo '*OK (Terraform Apply)'
+echo 'Infrastructre updated.'
 
 echo "*end: $(date)"
