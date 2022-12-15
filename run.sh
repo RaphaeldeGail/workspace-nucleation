@@ -77,6 +77,7 @@ if [ $? != 0 ]; then
     echo $RC
     exit 1
 fi
+rm -f plan.out
 echo 'Infrastructre updated.'
 
 echo "*end: $(date)"
