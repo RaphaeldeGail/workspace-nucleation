@@ -11,7 +11,7 @@
  *
  * The **org policy** service account can apply any policy at the organization level.
  * 
- * Along with the root project, a Google Cloud Storage bucket is created to service accounts private keys and terraform states.
+ * Along with the root project, a Google Cloud Storage bucket is created to store service accounts private keys and terraform states.
  *
  * ## Usage
  *
@@ -43,7 +43,6 @@
 terraform {
   cloud {
     organization = "raphaeldegail"
-
     workspaces {
       name = "gcp-wansho-root"
     }
@@ -77,6 +76,7 @@ locals {
     "iam.googleapis.com",
     "cloudidentity.googleapis.com"
   ]
+  root_name = "root"
 }
 
 data "google_organization" "org" {
@@ -102,8 +102,8 @@ resource "google_project" "root_project" {
   /**
    * Root project of the organization.
    */
-  name            = "root"
-  project_id      = join("-", ["root", random_string.random.result])
+  name            = local.root_name
+  project_id      = join("-", [local.root_name, random_string.random.result])
   org_id          = data.google_organization.org.org_id
   billing_account = var.billing_account
   labels = {
@@ -117,7 +117,7 @@ resource "google_storage_bucket" "root_bucket" {
   /**
    * Root bucket for the root project.
    */
-  name                        = join("-", ["root", "bucket", random_string.random.result])
+  name                        = join("-", [local.root_name, "bucket", random_string.random.result])
   location                    = var.location
   project                     = google_project.root_project.project_id
   force_destroy               = false
@@ -130,7 +130,7 @@ resource "google_storage_bucket" "root_bucket" {
 }
 
 resource "google_folder" "root_folder" {
-  display_name = join(" ", ["Root", "Folder"])
+  display_name = title(join(" ", [local.root_name, "folder"]))
   parent       = data.google_organization.org.name
 }
 
