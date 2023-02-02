@@ -10,12 +10,6 @@ variable "organization" {
   nullable    = false
 }
 
-variable "location" {
-  type        = string
-  description = "Geographical *location* for Google Cloud Platform."
-  nullable    = false
-}
-
 variable "region" {
   type        = string
   description = "Geographical *region* for Google Cloud Platform."

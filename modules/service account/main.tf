@@ -3,7 +3,7 @@
  * 
  * This module creates a service account as an object.
  * 
- * A service account authentication key is also bound and pushed to a google storage bucket if a **bucket_name** is given.
+ * Organization roles are then applied for the account.
  */
 
 terraform {

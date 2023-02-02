@@ -3,7 +3,7 @@
 
 This module creates a service account as an object.
 
-A service account authentication key is also bound and pushed to a google storage bucket if a **bucket\_name** is given.
+Organization roles are then applied for the account.
 
 ## Requirements
 
@@ -42,4 +42,5 @@ No modules.
 | Name | Description |
 |------|-------------|
 | service\_account\_email | Name of the service account as an email address. |
+| service\_account\_name | Name of the service account. |
 <!-- END_TF_DOCS -->
