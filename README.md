@@ -101,7 +101,8 @@ The root structure is then created.
 | Name | Description | Type | Default |
 |------|-------------|------|---------|
 | billing\_account | The ID of the billing account used for the workspace. | `string` | n/a |
-| organization | Name of the organization hosting the workspace. | `string` | n/a |
+| folder | The ID of the parent folder. | `string` | `null` |
+| organization | Name of the organization hosting the workspace. | `string` | `null` |
 | region | Geographical *region* for Google Cloud Platform. | `string` | n/a |
 | service\_accounts | List of service accounts along with their privileges. Only underscore, digits and lowercase letters are allowed for the key. | ```map(object({ description = string roles = list(string) }))``` | n/a |
 

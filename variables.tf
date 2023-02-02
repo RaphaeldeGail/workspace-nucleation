@@ -7,7 +7,15 @@ variable "billing_account" {
 variable "organization" {
   type        = string
   description = "Name of the organization hosting the workspace."
-  nullable    = false
+  nullable    = true
+  default     = null
+}
+
+variable "folder" {
+  type        = string
+  description = "The ID of the parent folder."
+  nullable    = true
+  default     = null
 }
 
 variable "region" {

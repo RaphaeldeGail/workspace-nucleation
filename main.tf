@@ -117,9 +117,12 @@ locals {
   ]
   root_name       = "root"
   base_cidr_block = "10.1.0.0/27"
+  root            = (var.folder == null) && (var.organization != null) ? true : false
 }
 
 data "google_organization" "org" {
+  count = local.root ? 1 : 0
+
   domain = var.organization
 }
 
@@ -128,12 +131,12 @@ resource "random_string" "random" {
    * Random string with only lowercase letters and integers.
    * Will be used to generate the root project ID and root bucket
    */
-  length      = 16
+  length      = local.root ? 16 : 4
   keepers     = null
   lower       = true
-  min_lower   = 8
+  min_lower   = local.root ? 8 : 2
   number      = true
-  min_numeric = 8
+  min_numeric = local.root ? 8 : 2
   upper       = false
   special     = false
 }
@@ -144,8 +147,9 @@ resource "google_project" "root_project" {
    */
   name            = local.root_name
   project_id      = join("-", [local.root_name, random_string.random.result])
-  org_id          = data.google_organization.org.org_id
+  org_id          = data.google_organization.org[0].org_id
   billing_account = var.billing_account
+  folder_id       = var.folder
   labels = {
     root = true
   }
@@ -155,14 +159,14 @@ resource "google_project" "root_project" {
 
 resource "google_folder" "root_folder" {
   display_name = title(join(" ", [local.root_name, "folder"]))
-  parent       = data.google_organization.org.name
+  parent       = data.google_organization.org[0].name
 }
 
 module "service_account" {
   source   = "./modules/service account"
   for_each = var.service_accounts
 
-  org_id      = data.google_organization.org.org_id
+  org_id      = data.google_organization.org[0].org_id
   full_name   = each.key
   description = each.value.description
   project_id  = google_project.root_project.project_id
