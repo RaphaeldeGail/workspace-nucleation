@@ -1,5 +1,20 @@
 #!/bin/bash
 
+DRY_RUN=false
+while getopts 'd' OPTION; do
+  case "$OPTION" in 
+    d) 
+      echo "This will be a dry run test..."
+      DRY_RUN=true
+      ;;
+
+    ?) 
+      echo "Usage: $(basename $0) [-d]"
+      exit 1
+      ;;
+  esac
+done
+
 # The credentials file below should be generated prior to this script execution.
 if [ ! -f $HOME/.config/gcloud/application_default_credentials.json ]; then
     echo 'The application default credentials could not be found.'
@@ -72,6 +87,11 @@ else
     echo '***Plan***'
     echo -e $RC
     echo '******'
+fi
+
+if $DRY_RUN; then
+    echo "*end: $(date)"
+    exit 0
 fi
 
 echo -ne 'Updating infrastructure... '

@@ -116,8 +116,12 @@ locals {
     "compute.googleapis.com"
   ]
   root_name       = "root"
+  project_name    = local.root ? ["root"] : ["workspace", title(var.name), "v${var.maj_version}"]
   base_cidr_block = "10.1.0.0/27"
   root            = (var.folder == null) && (var.organization != null) ? true : false
+  index_length    = local.root ? 16 : 4
+
+  labels = local.root ? { root = true } : { root = false, workspace = tostring(var.name), maj_version = tostring(var.maj_version) }
 }
 
 data "google_organization" "org" {
@@ -131,12 +135,12 @@ resource "random_string" "random" {
    * Random string with only lowercase letters and integers.
    * Will be used to generate the root project ID and root bucket
    */
-  length      = local.root ? 16 : 4
+  length      = local.index_length
   keepers     = null
   lower       = true
-  min_lower   = local.root ? 8 : 2
+  min_lower   = local.index_length / 2
   number      = true
-  min_numeric = local.root ? 8 : 2
+  min_numeric = local.index_length / 2
   upper       = false
   special     = false
 }
@@ -145,45 +149,14 @@ resource "google_project" "root_project" {
   /**
    * Root project of the organization.
    */
-  name            = local.root_name
-  project_id      = join("-", [local.root_name, random_string.random.result])
-  org_id          = data.google_organization.org[0].org_id
+  name            = join(" ", local.project_name)
+  project_id      = join("-", concat(local.project_name, [random_string.random.result]))
+  org_id          = local.root ? data.google_organization.org[0].org_id : null
   billing_account = var.billing_account
   folder_id       = var.folder
-  labels = {
-    root = true
-  }
+  labels          = local.labels
   // Org policies are not set up at this point so we rely on the auto_create_network feature to remove the root project default network.
-  auto_create_network = false
-}
-
-resource "google_folder" "root_folder" {
-  display_name = title(join(" ", [local.root_name, "folder"]))
-  parent       = data.google_organization.org[0].name
-}
-
-module "service_account" {
-  source   = "./modules/service account"
-  for_each = var.service_accounts
-
-  org_id      = data.google_organization.org[0].org_id
-  full_name   = each.key
-  description = each.value.description
-  project_id  = google_project.root_project.project_id
-  bucket_name = null
-  roles       = each.value.roles
-}
-
-resource "google_folder_iam_member" "root_folder_admins" {
-  folder = google_folder.root_folder.name
-  role   = "roles/resourcemanager.folderAdmin"
-  member = "serviceAccount:${module.service_account["project_creator"].service_account_email}"
-}
-
-resource "google_folder_iam_member" "root_folder_project_creator" {
-  folder = google_folder.root_folder.name
-  role   = "roles/resourcemanager.projectCreator"
-  member = "serviceAccount:${module.service_account["project_creator"].service_account_email}"
+  auto_create_network = local.root ? false : null
 }
 
 resource "google_project_service" "service" {
@@ -199,6 +172,65 @@ resource "google_project_service" "service" {
 
   disable_dependent_services = true
   disable_on_destroy         = true
+}
+
+module "service_account" {
+  source   = "./modules/service account"
+  for_each = var.service_accounts
+
+  org_id      = data.google_organization.org[0].org_id
+  full_name   = each.key
+  description = each.value.description
+  project_id  = google_project.root_project.project_id
+  bucket_name = null
+  roles       = each.value.roles
+}
+
+resource "google_storage_bucket" "workspace_bucket" {
+  name                        = google_project.root_project.project_id
+  location                    = var.region
+  project                     = google_project.root_project.project_id
+  force_destroy               = false
+  storage_class               = "STANDARD"
+  uniform_bucket_level_access = true
+
+  labels = local.labels
+}
+
+resource "google_service_account" "workspace_owner" {
+  account_id   = lower(join("-", concat(local.project_name, ["0"])))
+  display_name = title(join(" ", concat(local.project_name, ["Service", "Account"])))
+  description  = "This service account has full acces to folder ${google_folder.root_folder.display_name} with numeric ID: ${google_folder.root_folder.id}"
+  project      = google_project.root_project.project_id
+}
+
+resource "google_folder" "root_folder" {
+  display_name = title(join(" ", concat(local.project_name, ["folder"])))
+  parent       = local.root ? data.google_organization.org[0].name : join("/", ["folders", var.folder])
+}
+
+resource "google_folder_iam_binding" "root_folder_admins" {
+  folder = google_folder.root_folder.name
+  role   = "roles/resourcemanager.folderAdmin"
+  members = [
+    "serviceAccount:${google_service_account.workspace_owner.email}",
+  ]
+}
+
+resource "google_folder_iam_binding" "root_folder_project_creator" {
+  folder = google_folder.root_folder.name
+  role   = "roles/resourcemanager.projectCreator"
+  members = [
+    "serviceAccount:${google_service_account.workspace_owner.email}",
+  ]
+}
+
+resource "google_storage_bucket_iam_binding" "workspace_bucket_editors" {
+  bucket = google_storage_bucket.workspace_bucket.name
+  role   = "roles/storage.admin"
+  members = [
+    "serviceAccount:${google_service_account.workspace_owner.email}",
+  ]
 }
 
 resource "google_compute_network" "network" {
@@ -278,6 +310,84 @@ resource "google_cloud_identity_group_membership" "workspace_group_owner" {
   }
   roles {
     name = "MANAGER"
+  }
+
+  depends_on = [
+    google_project.root_project,
+  ]
+}
+
+/*
+ *
+ *
+ *
+ *
+ *
+ *
+ *
+ *
+ *
+ */
+
+resource "google_cloud_identity_group" "finops_group" {
+  provider = google.cloud_identity
+
+  display_name         = title(join(" ", concat(local.project_name, ["FinOps"])))
+  description          = "Financial operators at the ${join(" ", local.project_name)} level."
+  initial_group_config = "WITH_INITIAL_OWNER"
+
+  parent = "customers/C03krtmmy"
+
+  group_key {
+    id = "${join("-", local.project_name)}-finops@wansho.fr"
+  }
+
+  labels = {
+    "cloudidentity.googleapis.com/groups.discussion_forum" = ""
+  }
+
+  depends_on = [
+    google_project.root_project,
+  ]
+}
+
+resource "google_cloud_identity_group" "admins_group" {
+  provider = google.cloud_identity
+
+  display_name         = title(join(" ", concat(local.project_name, ["Admins"])))
+  description          = "Administrators at the ${join(" ", local.project_name)} level."
+  initial_group_config = "WITH_INITIAL_OWNER"
+
+  parent = "customers/C03krtmmy"
+
+  group_key {
+    id = "${join("-", local.project_name)}-admins@wansho.fr"
+  }
+
+  labels = {
+    "cloudidentity.googleapis.com/groups.discussion_forum" = ""
+  }
+
+  depends_on = [
+    google_project.root_project,
+  ]
+}
+
+resource "google_cloud_identity_group" "policy_admins_group" {
+  provider = google.cloud_identity
+
+  display_name         = title(join(" ", concat(local.project_name, ["Policy", "Admins"])))
+  description          = "Policy administrators at the ${join(" ", local.project_name)} level."
+  initial_group_config = "WITH_INITIAL_OWNER"
+
+  parent = "customers/C03krtmmy"
+
+  group_key {
+    id = "${join("-", local.project_name)}-policy-admins@wansho.fr"
+  }
+
+  labels = {
+    "cloudidentity.googleapis.com/groups.discussion_forum" = ""
   }
 
   depends_on = [
