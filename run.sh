@@ -98,7 +98,8 @@ echo -ne 'Updating infrastructure... '
 RC=$(terraform apply -no-color plan.out)
 if [ $? != 0 ]; then
     echo 'Infrastructure update failed.'
-    echo $RC
+    # Uncomment line below to display full logs on stdout before the issue.
+    #echo $RC
     exit 1
 fi
 rm -f plan.out

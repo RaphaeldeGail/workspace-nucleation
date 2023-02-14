@@ -24,15 +24,6 @@ variable "region" {
   nullable    = false
 }
 
-variable "service_accounts" {
-  type = map(object({
-    description = string
-    roles       = list(string)
-  }))
-  description = "List of service accounts along with their privileges. Only underscore, digits and lowercase letters are allowed for the key."
-  nullable    = false
-}
-
 variable "name" {
   type        = string
   default     = "root"
@@ -55,4 +46,31 @@ variable "maj_version" {
     error_message = "Major version can only be an integer."
   }
   nullable = false
+}
+
+variable "team" {
+  type = object({
+    administrators        = list(string)
+    policy_administrators = list(string)
+    finops                = list(string)
+  })
+  description = "List of team members by roles, *administrator*, *policy_administrator* and *finops*."
+  nullable    = false
+}
+
+locals {
+  apis = [
+    "orgpolicy.googleapis.com",
+    "cloudresourcemanager.googleapis.com",
+    "cloudbilling.googleapis.com",
+    "serviceusage.googleapis.com",
+    "iam.googleapis.com",
+    "cloudidentity.googleapis.com",
+    "compute.googleapis.com"
+  ]
+  workspace_name  = [title(var.name), "v${var.maj_version}"]
+  base_cidr_block = "10.1.0.0/27"
+  index_length    = 16
+
+  labels = var.folder == null ? { root = true } : { root = false, workspace = lower(var.name), version = tostring(var.maj_version) }
 }
