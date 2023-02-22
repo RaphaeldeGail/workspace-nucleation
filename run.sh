@@ -28,6 +28,7 @@ export TF_IN_AUTOMATION="true"
 export TF_INPUT=0
 # Uncomment the following line to enable DEBUG logging
 #export TF_LOG="debug"
+WORKSPACE="workstation-v1"
 
 
 echo "*start: $(date)"
@@ -57,7 +58,16 @@ if [ $? != 0 ]; then
     echo $RC
     exit 1
 fi
-echo 'Working directory initialized.'
+echo -ne 'Working directory initialized... '
+if ! terraform workspace select "$WORKSPACE-workspace"; then
+    terraform workspace new "$WORKSPACE-workspace"
+fi
+if [ "$(terraform workspace show)" != "$WORKSPACE-workspace" ]; then
+    echo 'Workspace could not be selected.'
+    echo $RC
+    exit 1
+fi
+echo "Workspace selected: $WORKSPACE-workspace"
 
 echo -ne 'Validating code... '
 RC=$(terraform validate -no-color)

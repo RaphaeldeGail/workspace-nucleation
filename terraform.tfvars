@@ -7,3 +7,6 @@ team = {
   policy_administrators = ["celine-renee@wansho.fr"]
   finops                = ["gwendoline@wansho.fr"]
 }
+#
+# parent = "root-v1"
+# name   = "workstation"

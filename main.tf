@@ -65,11 +65,17 @@
  * 
  */
 
+// Review the creation of groups with cloud identity in conflict with project creation.
+// Review the finops inception of groups with group managers.
+// Around 30 projects can be created under default quota.
+// A *direct* billing account can only attach up to 5 projects. Then you can create a new billing account if needed.
+// The maxmimum number of billing account you can create is unknown.
+
 terraform {
   cloud {
     organization = "raphaeldegail"
     workspaces {
-      name = "root-1"
+      tags = ["workspace", "wansho", "gcp"]
     }
   }
   required_version = "~> 1.1.2"
@@ -109,10 +115,27 @@ data "google_organization" "organization" {
   domain = var.organization
 }
 
+data "google_active_folder" "parent_folder" {
+  count = var.parent == null ? 0 : 1
+
+  display_name = "${var.parent} Workspace Folder"
+  parent       = data.google_organization.organization.name
+}
+
+data "google_cloud_identity_groups" "parent_groups" {
+  provider = google.cloud_identity
+
+  parent = "customers/C03krtmmy"
+
+  depends_on = [
+    google_project_service.administrator_api["cloudidentity.googleapis.com"]
+  ]
+}
+
 resource "random_string" "workspace_uid" {
   /** 
    * Unique ID as a random string with only lowercase letters and integers.
-   * Will be used to generate the root project ID and root bucket.
+   * Will be used to generate the root bucket name.
    */
   length      = local.index_length
   keepers     = null
@@ -128,11 +151,11 @@ resource "google_project" "administrator_project" {
   /**
    * Master project of the workspace.
    */
-  name            = join(" ", concat(local.workspace_name, ["Project"]))
-  project_id      = lower(join("-", concat(local.workspace_name, [random_string.workspace_uid.result])))
-  org_id          = var.folder == null ? data.google_organization.organization.org_id : null
+  name            = "${local.workspace_name} Workspace"
+  project_id      = "${local.workspace_name}-workspace"
+  org_id          = var.parent == null ? data.google_organization.organization.org_id : null
   billing_account = var.billing_account
-  folder_id       = var.folder
+  folder_id       = one(data.google_active_folder.parent_folder[*].name)
   labels          = merge(local.labels, { uid = random_string.workspace_uid.result })
 
   auto_create_network = false
@@ -155,7 +178,7 @@ resource "google_project_service" "administrator_api" {
 }
 
 resource "google_storage_bucket" "administrator_bucket" {
-  name                        = google_project.administrator_project.project_id
+  name                        = format("%s-%s", google_project.administrator_project.project_id, random_string.workspace_uid.result)
   location                    = var.region
   project                     = google_project.administrator_project.project_id
   force_destroy               = false
@@ -169,117 +192,40 @@ resource "google_storage_bucket" "administrator_bucket" {
   labels = merge(local.labels, { uid = random_string.workspace_uid.result })
 }
 
-resource "google_service_account" "finops" {
-  account_id   = lower(join("-", concat(local.workspace_name, ["finops"])))
-  display_name = join(" ", concat(local.workspace_name, ["FinOps Service Account"]))
-  description  = "This service account has full acces to facturation for folder ${google_folder.workspace_folder.display_name} with numeric ID: ${google_folder.workspace_folder.id}."
-  project      = google_project.administrator_project.project_id
-}
-
 resource "google_service_account" "administrator" {
-  account_id   = lower(join("-", concat(local.workspace_name, ["administrator"])))
-  display_name = join(" ", concat(local.workspace_name, ["Administrator Service Account"]))
+  account_id   = "administrator"
+  display_name = "${local.workspace_name} Workspace Administrator Service Account"
   description  = "This service account has full acces to folder ${google_folder.workspace_folder.display_name} with numeric ID: ${google_folder.workspace_folder.id}."
   project      = google_project.administrator_project.project_id
 }
 
 resource "google_service_account" "policy_administrator" {
-  account_id   = lower(join("-", concat(local.workspace_name, ["policy-administrator"])))
-  display_name = join(" ", concat(local.workspace_name, ["Policy Administrator Service Account"]))
+  account_id   = "policy-administrator"
+  display_name = "${local.workspace_name} Workspace Policy Administrator Service Account"
   description  = "This service account has full acces to policies for folder ${google_folder.workspace_folder.display_name} with numeric ID: ${google_folder.workspace_folder.id}."
   project      = google_project.administrator_project.project_id
 }
 
-resource "google_service_account" "administrator_secretary" {
-  account_id   = lower(join("-", concat(local.workspace_name, ["secretary"])))
-  display_name = join(" ", concat(local.workspace_name, ["Administrator Secretary Service Account"]))
-  description  = "This service account has full acces to the administrator project ${google_project.administrator_project.name} with numeric ID: ${google_project.administrator_project.number}"
-  project      = google_project.administrator_project.project_id
-}
-
-resource "google_compute_network" "administrator_network" {
-  project     = google_project.administrator_project.project_id
-  name        = "administrator-network"
-  description = "Network for administrative usage."
-
-  auto_create_subnetworks         = false
-  routing_mode                    = "REGIONAL"
-  delete_default_routes_on_create = true
-
-  depends_on = [
-    google_project_service.administrator_api["compute.googleapis.com"]
-  ]
-}
-
-resource "google_compute_subnetwork" "instance_subnetwork" {
-  project     = google_project.administrator_project.project_id
-  name        = "instance-subnetwork"
-  description = "Subnetwork hosting instances for administrative usage."
-
-  network                  = google_compute_network.administrator_network.id
-  ip_cidr_range            = cidrsubnet(local.base_cidr_block, 2, 0)
-  stack_type               = "IPV4_ONLY"
-  private_ip_google_access = true
-}
-
-resource "google_compute_route" "internet_route" {
-  project     = google_project.administrator_project.project_id
-  name        = "route-${lower(var.name)}-to-internet"
-  description = "Default route for \"${lower(var.name)}\" tagged instances to the internet."
-
-  network          = google_compute_network.administrator_network.name
-  dest_range       = "0.0.0.0/0"
-  next_hop_gateway = "default-internet-gateway"
-  priority         = 1000
-  tags             = [lower(var.name)]
-}
-
-resource "google_compute_firewall" "ssh_firewall" {
-  project     = google_project.administrator_project.project_id
-  name        = "allow-to-${lower(var.name)}-tcp-22"
-  description = "Allow TCP port 22 to \"${lower(var.name)}\" tagged instances."
-
-  network   = google_compute_network.administrator_network.id
-  direction = "INGRESS"
-  priority  = 10
-
-  allow {
-    protocol = "tcp"
-    ports    = ["22"]
-  }
-
-  source_ranges = ["0.0.0.0/0"]
-  target_tags   = [lower(var.name)]
-}
-
 resource "google_folder" "workspace_folder" {
-  display_name = join(" ", concat(local.workspace_name, ["Folder"]))
-  parent       = var.folder == null ? data.google_organization.organization.name : join("/", ["folders", var.folder])
+  display_name = "${local.workspace_name} Workspace"
+  parent       = var.parent == null ? data.google_organization.organization.name : one(data.google_active_folder.parent_folder[*].name)
 }
 
-/*
- *
- *
- *
- *
- *
- *
- *
- *
- *
+/**
+ * Google Groups
  */
 
 resource "google_cloud_identity_group" "finops_group" {
   provider = google.cloud_identity
 
-  display_name         = title(join(" ", concat(local.workspace_name, ["FinOps"])))
-  description          = "Financial operators at the ${join(" ", local.workspace_name)} level."
+  display_name         = "${local.workspace_name} FinOps"
+  description          = "Financial operators of the ${local.workspace_name} workspace."
   initial_group_config = "WITH_INITIAL_OWNER"
 
   parent = "customers/C03krtmmy"
 
   group_key {
-    id = "${join("-", local.workspace_name)}-finops@wansho.fr"
+    id = "${local.workspace_name}-finops@wansho.fr"
   }
 
   labels = {
@@ -294,14 +240,14 @@ resource "google_cloud_identity_group" "finops_group" {
 resource "google_cloud_identity_group" "administrators_group" {
   provider = google.cloud_identity
 
-  display_name         = title(join(" ", concat(local.workspace_name, ["Administrators"])))
-  description          = "Administrators at the ${join(" ", local.workspace_name)} level."
+  display_name         = "${local.workspace_name} Administrators"
+  description          = "Administrators of the ${local.workspace_name} workspace."
   initial_group_config = "WITH_INITIAL_OWNER"
 
   parent = "customers/C03krtmmy"
 
   group_key {
-    id = "${join("-", local.workspace_name)}-administrators@wansho.fr"
+    id = "${local.workspace_name}-administrators@wansho.fr"
   }
 
   labels = {
@@ -316,14 +262,14 @@ resource "google_cloud_identity_group" "administrators_group" {
 resource "google_cloud_identity_group" "policy_administrators_group" {
   provider = google.cloud_identity
 
-  display_name         = title(join(" ", concat(local.workspace_name, ["Policy", "Administrators"])))
-  description          = "Policy administrators at the ${join(" ", local.workspace_name)} level."
+  display_name         = "${local.workspace_name} Policy Administrators"
+  description          = "Policy Administrators of the ${local.workspace_name} workspace."
   initial_group_config = "WITH_INITIAL_OWNER"
 
   parent = "customers/C03krtmmy"
 
   group_key {
-    id = "${join("-", local.workspace_name)}-policy-administrators@wansho.fr"
+    id = "${local.workspace_name}-policy-administrators@wansho.fr"
   }
 
   labels = {
@@ -335,7 +281,7 @@ resource "google_cloud_identity_group" "policy_administrators_group" {
   ]
 }
 
-resource "google_cloud_identity_group_membership" "finops_group_owner" {
+resource "google_cloud_identity_group_membership" "finops_group_manager" {
   provider = google.cloud_identity
   for_each = toset(var.team.finops)
 
@@ -350,12 +296,22 @@ resource "google_cloud_identity_group_membership" "finops_group_owner" {
   roles {
     name = "MANAGER"
   }
+}
+
+resource "google_cloud_identity_group_membership" "finops_group_member" {
+  provider = google.cloud_identity
+
+  group = google_cloud_identity_group.finops_group.id
+
+  preferred_member_key {
+    id = google_cloud_identity_group.administrators_group.group_key[0].id
+  }
   roles {
-    name = "OWNER"
+    name = "MEMBER"
   }
 }
 
-resource "google_cloud_identity_group_membership" "administrators_group_owner" {
+resource "google_cloud_identity_group_membership" "administrators_group_manager" {
   provider = google.cloud_identity
   for_each = toset(var.team.administrators)
 
@@ -370,12 +326,9 @@ resource "google_cloud_identity_group_membership" "administrators_group_owner" {
   roles {
     name = "MANAGER"
   }
-  roles {
-    name = "OWNER"
-  }
 }
 
-resource "google_cloud_identity_group_membership" "policy_administrators_group_owner" {
+resource "google_cloud_identity_group_membership" "policy_administrators_group_manager" {
   provider = google.cloud_identity
   for_each = toset(var.team.policy_administrators)
 
@@ -390,14 +343,12 @@ resource "google_cloud_identity_group_membership" "policy_administrators_group_o
   roles {
     name = "MANAGER"
   }
-  roles {
-    name = "OWNER"
-  }
 }
 
-resource "google_cloud_identity_group_membership" "finops_parent_group" {
+resource "google_cloud_identity_group_membership" "parent_finops_group_member" {
   provider = google.cloud_identity
-  group    = "groups/01yyy98l12yhqe4"
+
+  group = var.parent == null ? "groups/01yyy98l12yhqe4" : "groups/01d96cc04ggk3sh"
 
   preferred_member_key {
     id = google_cloud_identity_group.finops_group.group_key[0].id
@@ -407,116 +358,179 @@ resource "google_cloud_identity_group_membership" "finops_parent_group" {
   }
 }
 
-/*
- *
- *
- *
- *
- *
- *
- *
+/**
+ * Identity and Access Management
  */
 
-resource "google_folder_iam_binding" "workspace_folder_administrators" {
-  folder = google_folder.workspace_folder.name
-  role   = "roles/resourcemanager.folderAdmin"
-  members = [
-    "serviceAccount:${google_service_account.administrator.email}",
-  ]
+resource "google_project_iam_custom_role" "image_manager_role" {
+  role_id     = "imageManager"
+  title       = "Image Manager"
+  description = "Can create and use compute images."
+  project     = google_project.administrator_project.project_id
 
-  depends_on = [
-    google_cloud_identity_group_membership.administrators_group_owner
-  ]
-}
-
-resource "google_folder_iam_binding" "workspace_folder_project_creator" {
-  folder = google_folder.workspace_folder.name
-  role   = "roles/resourcemanager.projectCreator"
-  members = [
-    "serviceAccount:${google_service_account.administrator.email}",
-  ]
-
-  depends_on = [
-    google_cloud_identity_group_membership.administrators_group_owner
-  ]
-}
-
-resource "google_storage_bucket_iam_binding" "bucket_editor" {
-  bucket = google_storage_bucket.administrator_bucket.name
-  role   = "roles/storage.objectAdmin"
-  members = [
-    "serviceAccount:${google_service_account.administrator_secretary.email}",
+  permissions = [
+    "compute.images.create",
+    "compute.images.createTagBinding",
+    "compute.images.delete",
+    "compute.images.deleteTagBinding",
+    "compute.images.deprecate",
+    "compute.images.get",
+    "compute.images.getFromFamily",
+    "compute.images.getIamPolicy",
+    "compute.images.list",
+    "compute.images.listEffectiveTags",
+    "compute.images.listTagBindings",
+    "compute.images.setIamPolicy",
+    "compute.images.setLabels",
+    "compute.images.update",
+    "compute.images.useReadOnly",
+    "compute.globalOperations.get"
   ]
 }
 
-resource "google_project_iam_binding" "owners" {
-  project = google_project.administrator_project.project_id
-  role    = "roles/owner"
-  members = [
-    "serviceAccount:${google_service_account.administrator_secretary.email}"
-  ]
+data "google_iam_policy" "folder_admin" {
+  binding {
+    role = "roles/resourcemanager.folderAdmin"
 
-  depends_on = [
-    google_storage_bucket_iam_binding.bucket_editor,
-    google_cloud_identity_group_membership.finops_group_owner,
-    google_cloud_identity_group_membership.administrators_group_owner,
-    google_cloud_identity_group_membership.policy_administrators_group_owner
-  ]
+    members = [
+      "serviceAccount:${google_service_account.administrator.email}",
+    ]
+  }
+
+  binding {
+    role = "roles/resourcemanager.projectCreator"
+
+    members = [
+      "serviceAccount:${google_service_account.administrator.email}",
+    ]
+  }
+
+  binding {
+    role = "roles/viewer"
+
+    members = [
+      "group:${google_cloud_identity_group.administrators_group.group_key[0].id}",
+      "group:${google_cloud_identity_group.policy_administrators_group.group_key[0].id}",
+      "group:${google_cloud_identity_group.finops_group.group_key[0].id}"
+    ]
+  }
 }
 
-resource "google_project_iam_binding" "editors" {
-  project = google_project.administrator_project.project_id
-  role    = "roles/editor"
-  members = [
-    "serviceAccount:${google_project.administrator_project.number}@cloudservices.gserviceaccount.com"
-  ]
+data "google_iam_policy" "project_admin" {
+  binding {
+    role = "roles/compute.serviceAgent"
+
+    members = [
+      "serviceAccount:service-${google_project.administrator_project.number}@compute-system.iam.gserviceaccount.com",
+    ]
+  }
+
+  binding {
+    role = "roles/editor"
+
+    members = [
+      "serviceAccount:${google_project.administrator_project.number}@cloudservices.gserviceaccount.com"
+    ]
+  }
+
+  binding {
+    role = "roles/owner"
+
+    members = [
+      var.parent == null ? "group:org-administrators@wansho.fr" : "serviceAccount:administrator@${var.parent}-workspace.iam.gserviceaccount.com"
+    ]
+  }
+
+  binding {
+    role = google_project_iam_custom_role.image_manager_role.id
+
+    members = [
+      "serviceAccount:${google_service_account.administrator.email}",
+    ]
+  }
+
+  binding {
+    role = "roles/viewer"
+
+    members = [
+      "group:${google_cloud_identity_group.administrators_group.group_key[0].id}",
+      "group:${google_cloud_identity_group.policy_administrators_group.group_key[0].id}",
+      "group:${google_cloud_identity_group.finops_group.group_key[0].id}",
+      "serviceAccount:${google_service_account.administrator.email}",
+    ]
+  }
 }
 
-resource "google_project_iam_binding" "instance_users" {
-  project = google_project.administrator_project.project_id
-  role    = "roles/compute.instanceAdmin.v1"
-  members = [
-    "group:${google_cloud_identity_group.administrators_group.group_key[0].id}"
-  ]
+data "google_iam_policy" "administrator_admin" {
+  binding {
+    role = "roles/iam.serviceAccountTokenCreator"
+
+    members = [
+      "group:${google_cloud_identity_group.administrators_group.group_key[0].id}",
+    ]
+  }
 }
 
-resource "google_service_account_iam_binding" "administrator_impersonator" {
+data "google_iam_policy" "policy_administrator_admin" {
+  binding {
+    role = "roles/iam.serviceAccountTokenCreator"
+
+    members = [
+      "group:${google_cloud_identity_group.policy_administrators_group.group_key[0].id}",
+    ]
+  }
+}
+
+data "google_iam_policy" "bucket_admin" {
+  binding {
+    role = "roles/storage.objectAdmin"
+
+    members = [
+      "serviceAccount:${google_service_account.administrator.email}",
+      "serviceAccount:${google_service_account.policy_administrator.email}",
+    ]
+  }
+
+  binding {
+    role = "roles/storage.admin"
+
+    members = [
+      var.parent == null ? "group:org-administrators@wansho.fr" : "serviceAccount:administrator@${var.parent}-workspace.iam.gserviceaccount.com"
+    ]
+  }
+
+  binding {
+    role = "roles/storage.objectViewer"
+
+    members = [
+      "group:${google_cloud_identity_group.administrators_group.group_key[0].id}",
+      "group:${google_cloud_identity_group.policy_administrators_group.group_key[0].id}",
+      "group:${google_cloud_identity_group.finops_group.group_key[0].id}"
+    ]
+  }
+}
+
+resource "google_folder_iam_policy" "folder_access" {
+  folder      = google_folder.workspace_folder.name
+  policy_data = data.google_iam_policy.folder_admin.policy_data
+}
+
+resource "google_storage_bucket_iam_policy" "bucket_access" {
+  bucket      = google_storage_bucket.administrator_bucket.name
+  policy_data = data.google_iam_policy.bucket_admin.policy_data
+}
+
+resource "google_project_iam_policy" "project_access" {
+  project     = google_project.administrator_project.project_id
+  policy_data = data.google_iam_policy.project_admin.policy_data
+}
+
+resource "google_service_account_iam_policy" "administrator_access" {
   service_account_id = google_service_account.administrator.name
-  role               = "roles/iam.serviceAccountTokenCreator"
-
-  members = [
-    "group:${google_cloud_identity_group.administrators_group.group_key[0].id}",
-  ]
+  policy_data        = data.google_iam_policy.administrator_admin.policy_data
 }
 
-resource "google_service_account_iam_binding" "administrator_secretary_user" {
-  service_account_id = google_service_account.administrator_secretary.name
-  role               = "roles/iam.serviceAccountUser"
-
-  members = [
-    "group:${google_cloud_identity_group.administrators_group.group_key[0].id}",
-  ]
-}
-
-resource "google_service_account_iam_binding" "policy_administrator_impersonator" {
+resource "google_service_account_iam_policy" "policy_administrator_access" {
   service_account_id = google_service_account.policy_administrator.name
-  role               = "roles/iam.serviceAccountTokenCreator"
-
-  members = [
-    "group:${google_cloud_identity_group.policy_administrators_group.group_key[0].id}",
-  ]
+  policy_data        = data.google_iam_policy.policy_administrator_admin.policy_data
 }
-
-resource "google_service_account_iam_binding" "finops_impersonator" {
-  service_account_id = google_service_account.finops.name
-  role               = "roles/iam.serviceAccountTokenCreator"
-
-  members = [
-    "group:${google_cloud_identity_group.finops_group.group_key[0].id}",
-    "serviceAccount:${google_service_account.administrator.email}",
-  ]
-}
-
-// How to update the workspace
-
-// How to delete the workspace

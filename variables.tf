@@ -11,11 +11,17 @@ variable "organization" {
   default     = null
 }
 
-variable "folder" {
+variable "parent" {
   type        = string
-  description = "The ID of the parent folder."
+  description = "The name of the parent workspace in the form of *{name}-v{version}*."
   nullable    = true
   default     = null
+
+  validation {
+    # regex(...) fails if it cannot find a match
+    condition     = can(regex("^[a-z]*-v[0-9]$", var.parent)) || var.parent == null
+    error_message = "The workspace parent name should be of the form *{name}-v{version}*."
+  }
 }
 
 variable "region" {
@@ -66,11 +72,14 @@ locals {
     "serviceusage.googleapis.com",
     "iam.googleapis.com",
     "cloudidentity.googleapis.com",
-    "compute.googleapis.com"
+    "compute.googleapis.com",
+    "dns.googleapis.com",
+    "iamcredentials.googleapis.com",
+    "storage.googleapis.com",
   ]
-  workspace_name  = [title(var.name), "v${var.maj_version}"]
+  workspace_name  = "${var.name}-v${var.maj_version}"
   base_cidr_block = "10.1.0.0/27"
   index_length    = 16
 
-  labels = var.folder == null ? { root = true } : { root = false, workspace = lower(var.name), version = tostring(var.maj_version) }
+  labels = var.parent == null ? { root = true } : { root = false, workspace = lower(var.name), version = tostring(var.maj_version) }
 }
