@@ -1,3 +1,9 @@
+variable "credentials" {
+  type        = string
+  description = "The service account credentials."
+  nullable    = false
+}
+
 variable "billing_account" {
   type        = string
   description = "The ID of the billing account used for the workspace."
@@ -9,6 +15,12 @@ variable "organization" {
   description = "Name of the organization hosting the workspace."
   nullable    = true
   default     = null
+}
+
+variable "cloud_identity_id" {
+  type        = string
+  description = "The ID of the cloud identity resource."
+  nullable    = false
 }
 
 variable "parent" {
@@ -76,10 +88,28 @@ locals {
     "dns.googleapis.com",
     "iamcredentials.googleapis.com",
     "storage.googleapis.com",
+    "cloudkms.googleapis.com"
   ]
-  workspace_name  = "${var.name}-v${var.maj_version}"
-  base_cidr_block = "10.1.0.0/27"
-  index_length    = 16
+  image_manager_permissions = [
+    "compute.images.create",
+    "compute.images.createTagBinding",
+    "compute.images.delete",
+    "compute.images.deleteTagBinding",
+    "compute.images.deprecate",
+    "compute.images.get",
+    "compute.images.getFromFamily",
+    "compute.images.getIamPolicy",
+    "compute.images.list",
+    "compute.images.listEffectiveTags",
+    "compute.images.listTagBindings",
+    "compute.images.setIamPolicy",
+    "compute.images.setLabels",
+    "compute.images.update",
+    "compute.images.useReadOnly",
+    "compute.globalOperations.get"
+  ]
+  workspace_name = "${var.name}-v${var.maj_version}"
+  index_length   = 16
 
-  labels = var.parent == null ? { root = true } : { root = false, workspace = lower(var.name), version = tostring(var.maj_version) }
+  labels = var.parent == null ? { root = true } : { workspace = lower(var.name), version = tostring(var.maj_version) }
 }

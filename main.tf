@@ -65,15 +65,9 @@
  * 
  */
 
-// Review the creation of groups with cloud identity in conflict with project creation.
-// Review the finops inception of groups with group managers.
-// Around 30 projects can be created under default quota.
-// A *direct* billing account can only attach up to 5 projects. Then you can create a new billing account if needed.
-// The maxmimum number of billing account you can create is unknown.
-
 terraform {
   cloud {
-    organization = "raphaeldegail"
+    organization = "wansho"
     workspaces {
       tags = ["workspace", "wansho", "gcp"]
     }
@@ -82,7 +76,7 @@ terraform {
   required_providers {
     google = {
       source  = "hashicorp/google"
-      version = "~> 4.5.0"
+      version = "~> 4.53.1"
     }
     random = {
       source  = "hashicorp/random"
@@ -92,20 +86,10 @@ terraform {
 }
 
 provider "google" {
-  region = var.region
-}
-
-provider "google" {
-  /**
-   * This is a workaround to manage group membership as it requires either a service account (none created yet) or a billing project declare for the client.
-   * We create an alternative provider which points to the root project for the billing project.
-   * The alternative provider avoids cyclic dependencies since it is only called after the root project has been created.
-   */
-  region = var.region
-
-  alias                 = "cloud_identity"
-  user_project_override = true
-  billing_project       = google_project.administrator_project.project_id
+  credentials                 = var.credentials
+  //TODO service account impersonation with a variable
+  impersonate_service_account = "builder@root-378815.iam.gserviceaccount.com"
+  region                      = var.region
 }
 
 provider "random" {
@@ -115,21 +99,9 @@ data "google_organization" "organization" {
   domain = var.organization
 }
 
-data "google_active_folder" "parent_folder" {
-  count = var.parent == null ? 0 : 1
-
-  display_name = "${var.parent} Workspace Folder"
-  parent       = data.google_organization.organization.name
-}
-
-data "google_cloud_identity_groups" "parent_groups" {
-  provider = google.cloud_identity
-
-  parent = "customers/C03krtmmy"
-
-  depends_on = [
-    google_project_service.administrator_api["cloudidentity.googleapis.com"]
-  ]
+data "google_tags_tag_key" "workspace_tag_key" {
+  parent     = data.google_organization.organization.name
+  short_name = "workspace"
 }
 
 resource "random_string" "workspace_uid" {
@@ -147,6 +119,12 @@ resource "random_string" "workspace_uid" {
   special     = false
 }
 
+resource "google_tags_tag_value" "workspace_tag_value" {
+  parent      = data.google_tags_tag_key.workspace_tag_key.id
+  short_name  = local.workspace_name
+  description = "For resources under ${local.workspace_name} workspace."
+}
+
 resource "google_project" "administrator_project" {
   /**
    * Master project of the workspace.
@@ -155,11 +133,16 @@ resource "google_project" "administrator_project" {
   project_id      = "${local.workspace_name}-workspace"
   org_id          = var.parent == null ? data.google_organization.organization.org_id : null
   billing_account = var.billing_account
-  folder_id       = one(data.google_active_folder.parent_folder[*].name)
+  folder_id       = null
   labels          = merge(local.labels, { uid = random_string.workspace_uid.result })
 
   auto_create_network = false
   skip_delete         = true
+}
+
+resource "google_tags_tag_binding" "workspace_tag_binding" {
+  parent    = "//cloudresourcemanager.googleapis.com/projects/${google_project.administrator_project.number}"
+  tag_value = google_tags_tag_value.workspace_tag_value.id
 }
 
 resource "google_project_service" "administrator_api" {
@@ -188,8 +171,21 @@ resource "google_storage_bucket" "administrator_bucket" {
   versioning {
     enabled = true
   }
+  encryption {
+    default_kms_key_name = google_kms_crypto_key.symmetric_key.id
+  }
 
   labels = merge(local.labels, { uid = random_string.workspace_uid.result })
+
+  depends_on = [
+    google_kms_crypto_key_iam_policy.kms_key_policy
+  ]
+}
+
+resource "google_tags_location_tag_binding" "bucket_tag_binding" {
+  parent    = "//storage.googleapis.com/projects/_/buckets/${google_storage_bucket.administrator_bucket.name}"
+  tag_value = google_tags_tag_value.workspace_tag_value.id
+  location  = var.region
 }
 
 resource "google_service_account" "administrator" {
@@ -208,7 +204,48 @@ resource "google_service_account" "policy_administrator" {
 
 resource "google_folder" "workspace_folder" {
   display_name = "${local.workspace_name} Workspace"
-  parent       = var.parent == null ? data.google_organization.organization.name : one(data.google_active_folder.parent_folder[*].name)
+  parent       = var.parent == null ? data.google_organization.organization.name : null
+}
+
+resource "google_tags_tag_binding" "workspace_folder_tag_binding" {
+  parent    = "//cloudresourcemanager.googleapis.com/${google_folder.workspace_folder.name}"
+  tag_value = google_tags_tag_value.workspace_tag_value.id
+}
+
+resource "google_kms_key_ring" "workspace_keyring" {
+  project = google_project.administrator_project.project_id
+
+  name     = "${local.workspace_name}-keyring"
+  location = var.region
+
+  lifecycle {
+    prevent_destroy = true
+  }
+
+  depends_on = [
+    google_project_service.administrator_api["cloudkms.googleapis.com"]
+  ]
+}
+
+resource "google_kms_crypto_key" "symmetric_key" {
+  name            = "${local.workspace_name}-symmetric-key"
+  key_ring        = google_kms_key_ring.workspace_keyring.id
+  purpose         = "ENCRYPT_DECRYPT"
+  rotation_period = "100000s"
+
+  labels = merge(local.labels, { uid = random_string.workspace_uid.result })
+
+  version_template {
+    algorithm = "GOOGLE_SYMMETRIC_ENCRYPTION"
+  }
+
+  lifecycle {
+    prevent_destroy = true
+  }
+}
+
+resource "google_kms_crypto_key_version" "key_instance" {
+  crypto_key = google_kms_crypto_key.symmetric_key.id
 }
 
 /**
@@ -216,13 +253,11 @@ resource "google_folder" "workspace_folder" {
  */
 
 resource "google_cloud_identity_group" "finops_group" {
-  provider = google.cloud_identity
-
   display_name         = "${local.workspace_name} FinOps"
   description          = "Financial operators of the ${local.workspace_name} workspace."
   initial_group_config = "WITH_INITIAL_OWNER"
 
-  parent = "customers/C03krtmmy"
+  parent = "customers/${var.cloud_identity_id}"
 
   group_key {
     id = "${local.workspace_name}-finops@wansho.fr"
@@ -238,13 +273,11 @@ resource "google_cloud_identity_group" "finops_group" {
 }
 
 resource "google_cloud_identity_group" "administrators_group" {
-  provider = google.cloud_identity
-
   display_name         = "${local.workspace_name} Administrators"
   description          = "Administrators of the ${local.workspace_name} workspace."
   initial_group_config = "WITH_INITIAL_OWNER"
 
-  parent = "customers/C03krtmmy"
+  parent = "customers/${var.cloud_identity_id}"
 
   group_key {
     id = "${local.workspace_name}-administrators@wansho.fr"
@@ -260,13 +293,11 @@ resource "google_cloud_identity_group" "administrators_group" {
 }
 
 resource "google_cloud_identity_group" "policy_administrators_group" {
-  provider = google.cloud_identity
-
   display_name         = "${local.workspace_name} Policy Administrators"
   description          = "Policy Administrators of the ${local.workspace_name} workspace."
   initial_group_config = "WITH_INITIAL_OWNER"
 
-  parent = "customers/C03krtmmy"
+  parent = "customers/${var.cloud_identity_id}"
 
   group_key {
     id = "${local.workspace_name}-policy-administrators@wansho.fr"
@@ -282,7 +313,6 @@ resource "google_cloud_identity_group" "policy_administrators_group" {
 }
 
 resource "google_cloud_identity_group_membership" "finops_group_manager" {
-  provider = google.cloud_identity
   for_each = toset(var.team.finops)
 
   group = google_cloud_identity_group.finops_group.id
@@ -294,25 +324,11 @@ resource "google_cloud_identity_group_membership" "finops_group_manager" {
     name = "MEMBER"
   }
   roles {
-    name = "MANAGER"
-  }
-}
-
-resource "google_cloud_identity_group_membership" "finops_group_member" {
-  provider = google.cloud_identity
-
-  group = google_cloud_identity_group.finops_group.id
-
-  preferred_member_key {
-    id = google_cloud_identity_group.administrators_group.group_key[0].id
-  }
-  roles {
-    name = "MEMBER"
+    name = "OWNER"
   }
 }
 
 resource "google_cloud_identity_group_membership" "administrators_group_manager" {
-  provider = google.cloud_identity
   for_each = toset(var.team.administrators)
 
   group = google_cloud_identity_group.administrators_group.id
@@ -324,12 +340,11 @@ resource "google_cloud_identity_group_membership" "administrators_group_manager"
     name = "MEMBER"
   }
   roles {
-    name = "MANAGER"
+    name = "OWNER"
   }
 }
 
 resource "google_cloud_identity_group_membership" "policy_administrators_group_manager" {
-  provider = google.cloud_identity
   for_each = toset(var.team.policy_administrators)
 
   group = google_cloud_identity_group.policy_administrators_group.id
@@ -341,20 +356,7 @@ resource "google_cloud_identity_group_membership" "policy_administrators_group_m
     name = "MEMBER"
   }
   roles {
-    name = "MANAGER"
-  }
-}
-
-resource "google_cloud_identity_group_membership" "parent_finops_group_member" {
-  provider = google.cloud_identity
-
-  group = var.parent == null ? "groups/01yyy98l12yhqe4" : "groups/01d96cc04ggk3sh"
-
-  preferred_member_key {
-    id = google_cloud_identity_group.finops_group.group_key[0].id
-  }
-  roles {
-    name = "MEMBER"
+    name = "OWNER"
   }
 }
 
@@ -368,32 +370,16 @@ resource "google_project_iam_custom_role" "image_manager_role" {
   description = "Can create and use compute images."
   project     = google_project.administrator_project.project_id
 
-  permissions = [
-    "compute.images.create",
-    "compute.images.createTagBinding",
-    "compute.images.delete",
-    "compute.images.deleteTagBinding",
-    "compute.images.deprecate",
-    "compute.images.get",
-    "compute.images.getFromFamily",
-    "compute.images.getIamPolicy",
-    "compute.images.list",
-    "compute.images.listEffectiveTags",
-    "compute.images.listTagBindings",
-    "compute.images.setIamPolicy",
-    "compute.images.setLabels",
-    "compute.images.update",
-    "compute.images.useReadOnly",
-    "compute.globalOperations.get"
-  ]
+  permissions = local.image_manager_permissions
 }
 
-data "google_iam_policy" "folder_admin" {
+data "google_iam_policy" "management" {
   binding {
     role = "roles/resourcemanager.folderAdmin"
 
     members = [
       "serviceAccount:${google_service_account.administrator.email}",
+      "serviceAccount:builder@root-378815.iam.gserviceaccount.com"
     ]
   }
 
@@ -416,7 +402,12 @@ data "google_iam_policy" "folder_admin" {
   }
 }
 
-data "google_iam_policy" "project_admin" {
+resource "google_folder_iam_policy" "folder_policy" {
+  folder      = google_folder.workspace_folder.name
+  policy_data = data.google_iam_policy.management.policy_data
+}
+
+data "google_iam_policy" "ownership" {
   binding {
     role = "roles/compute.serviceAgent"
 
@@ -437,7 +428,8 @@ data "google_iam_policy" "project_admin" {
     role = "roles/owner"
 
     members = [
-      var.parent == null ? "group:org-administrators@wansho.fr" : "serviceAccount:administrator@${var.parent}-workspace.iam.gserviceaccount.com"
+      var.parent == null ? "group:org-administrators@wansho.fr" : "serviceAccount:administrator@${var.parent}-workspace.iam.gserviceaccount.com",
+      "serviceAccount:builder@root-378815.iam.gserviceaccount.com"
     ]
   }
 
@@ -461,7 +453,12 @@ data "google_iam_policy" "project_admin" {
   }
 }
 
-data "google_iam_policy" "administrator_admin" {
+resource "google_project_iam_policy" "project_policy" {
+  project     = google_project.administrator_project.project_id
+  policy_data = data.google_iam_policy.ownership.policy_data
+}
+
+data "google_iam_policy" "administrators_impersonation" {
   binding {
     role = "roles/iam.serviceAccountTokenCreator"
 
@@ -471,7 +468,12 @@ data "google_iam_policy" "administrator_admin" {
   }
 }
 
-data "google_iam_policy" "policy_administrator_admin" {
+resource "google_service_account_iam_policy" "administrator_service_account_policy" {
+  service_account_id = google_service_account.administrator.name
+  policy_data        = data.google_iam_policy.administrators_impersonation.policy_data
+}
+
+data "google_iam_policy" "policy_administrators_impersonation" {
   binding {
     role = "roles/iam.serviceAccountTokenCreator"
 
@@ -481,7 +483,12 @@ data "google_iam_policy" "policy_administrator_admin" {
   }
 }
 
-data "google_iam_policy" "bucket_admin" {
+resource "google_service_account_iam_policy" "policy_administrator_service_account_policy" {
+  service_account_id = google_service_account.policy_administrator.name
+  policy_data        = data.google_iam_policy.policy_administrators_impersonation.policy_data
+}
+
+data "google_iam_policy" "storage_management" {
   binding {
     role = "roles/storage.objectAdmin"
 
@@ -495,7 +502,8 @@ data "google_iam_policy" "bucket_admin" {
     role = "roles/storage.admin"
 
     members = [
-      var.parent == null ? "group:org-administrators@wansho.fr" : "serviceAccount:administrator@${var.parent}-workspace.iam.gserviceaccount.com"
+      var.parent == null ? "group:org-administrators@wansho.fr" : "serviceAccount:administrator@${var.parent}-workspace.iam.gserviceaccount.com",
+      "serviceAccount:builder@root-378815.iam.gserviceaccount.com"
     ]
   }
 
@@ -510,27 +518,78 @@ data "google_iam_policy" "bucket_admin" {
   }
 }
 
-resource "google_folder_iam_policy" "folder_access" {
-  folder      = google_folder.workspace_folder.name
-  policy_data = data.google_iam_policy.folder_admin.policy_data
-}
-
-resource "google_storage_bucket_iam_policy" "bucket_access" {
+resource "google_storage_bucket_iam_policy" "bucket_policy" {
   bucket      = google_storage_bucket.administrator_bucket.name
-  policy_data = data.google_iam_policy.bucket_admin.policy_data
+  policy_data = data.google_iam_policy.storage_management.policy_data
 }
 
-resource "google_project_iam_policy" "project_access" {
-  project     = google_project.administrator_project.project_id
-  policy_data = data.google_iam_policy.project_admin.policy_data
+data "google_iam_policy" "billing_management" {
+  binding {
+    role = "roles/billing.admin"
+
+    members = [
+      "group:${google_cloud_identity_group.finops_group.group_key[0].id}"
+    ]
+  }
+
+  binding {
+    role = "roles/billing.viewer"
+
+    members = [
+      "serviceAccount:${google_service_account.administrator.email}",
+      "group:${google_cloud_identity_group.administrators_group.group_key[0].id}",
+    ]
+  }
+
+  binding {
+    role = "roles/billing.user"
+
+    members = [
+      "serviceAccount:${google_service_account.administrator.email}"
+    ]
+  }
 }
 
-resource "google_service_account_iam_policy" "administrator_access" {
-  service_account_id = google_service_account.administrator.name
-  policy_data        = data.google_iam_policy.administrator_admin.policy_data
+resource "google_billing_account_iam_policy" "billing_account_policy" {
+  billing_account_id = var.billing_account
+  policy_data        = data.google_iam_policy.billing_management.policy_data
 }
 
-resource "google_service_account_iam_policy" "policy_administrator_access" {
-  service_account_id = google_service_account.policy_administrator.name
-  policy_data        = data.google_iam_policy.policy_administrator_admin.policy_data
+data "google_iam_policy" "tags_usage" {
+  binding {
+    role = "roles/resourcemanager.tagViewer"
+
+    members = [
+      "group:${google_cloud_identity_group.policy_administrators_group.group_key[0].id}",
+      "serviceAccount:${google_service_account.policy_administrator.email}"
+    ]
+  }
+
+  binding {
+    role = "roles/resourcemanager.tagUser"
+
+    members = [
+      "serviceAccount:${google_service_account.policy_administrator.email}",
+    ]
+  }
+}
+
+resource "google_tags_tag_value_iam_policy" "tags_policy" {
+  tag_value   = google_tags_tag_value.workspace_tag_value.id
+  policy_data = data.google_iam_policy.tags_usage.policy_data
+}
+
+data "google_iam_policy" "kms_key_usage" {
+  binding {
+    role = "roles/cloudkms.cryptoKeyEncrypterDecrypter"
+
+    members = [
+      "serviceAccount:service-${google_project.administrator_project.number}@gs-project-accounts.iam.gserviceaccount.com",
+    ]
+  }
+}
+
+resource "google_kms_crypto_key_iam_policy" "kms_key_policy" {
+  crypto_key_id = google_kms_crypto_key.symmetric_key.id
+  policy_data   = data.google_iam_policy.kms_key_usage.policy_data
 }
