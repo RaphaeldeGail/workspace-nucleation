@@ -124,12 +124,11 @@ No modules.
 | Name | Description | Type | Default |
 |------|-------------|------|---------|
 | billing\_account | The ID of the billing account used for the workspace. | `string` | n/a |
+| builder\_account | E-mail of the workspace builder service account. | `string` | n/a |
 | cloud\_identity\_id | The ID of the cloud identity resource. | `string` | n/a |
 | credentials | The service account credentials. | `string` | n/a |
-| maj\_version | Major version of the new workspace. Defaults to 0. | `number` | `0` |
-| name | Name of the new workspace. | `string` | `"root"` |
-| organization | Name of the organization hosting the workspace. | `string` | `null` |
-| parent | The name of the parent workspace in the form of *{name}-v{version}*. | `string` | `null` |
+| name | Name of the new workspace. Should be of the form [a-z][a-z0-9]{1,9}[a-z]-v[0-9]{2}. | `string` | n/a |
+| organization | Name of the organization hosting the workspace. | `string` | n/a |
 | region | Geographical *region* for Google Cloud Platform. | `string` | n/a |
 | team | List of team members by roles, *administrator*, *policy\_administrator* and *finops*. | ```object({ administrators = list(string) policy_administrators = list(string) finops = list(string) })``` | n/a |
 
@@ -137,5 +136,6 @@ No modules.
 
 | Name | Description |
 |------|-------------|
-| administrator\_project\_id | ID of the administrator project. |
+| administrator\_project\_id | The ID of the administrator project. |
+| workspace\_bucket\_name | The name of the administrator bucket. |
 <!-- END_TF_DOCS -->

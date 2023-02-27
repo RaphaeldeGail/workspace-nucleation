@@ -65,6 +65,8 @@
  * 
  */
 
+// Update docs
+
 terraform {
   cloud {
     organization = "wansho"
@@ -86,9 +88,9 @@ terraform {
 }
 
 provider "google" {
-  credentials                 = var.credentials
-  //TODO service account impersonation with a variable
-  impersonate_service_account = "builder@root-378815.iam.gserviceaccount.com"
+  credentials = var.credentials
+
+  impersonate_service_account = var.builder_account
   region                      = var.region
 }
 
@@ -121,19 +123,18 @@ resource "random_string" "workspace_uid" {
 
 resource "google_tags_tag_value" "workspace_tag_value" {
   parent      = data.google_tags_tag_key.workspace_tag_key.id
-  short_name  = local.workspace_name
-  description = "For resources under ${local.workspace_name} workspace."
+  short_name  = var.name
+  description = "For resources under ${var.name} workspace."
 }
 
 resource "google_project" "administrator_project" {
   /**
    * Master project of the workspace.
    */
-  name            = "${local.workspace_name} Workspace"
-  project_id      = "${local.workspace_name}-workspace"
-  org_id          = var.parent == null ? data.google_organization.organization.org_id : null
+  name            = "${var.name} Administration"
+  project_id      = "${var.name}-administration"
+  org_id          = data.google_organization.organization.org_id
   billing_account = var.billing_account
-  folder_id       = null
   labels          = merge(local.labels, { uid = random_string.workspace_uid.result })
 
   auto_create_network = false
@@ -190,21 +191,21 @@ resource "google_tags_location_tag_binding" "bucket_tag_binding" {
 
 resource "google_service_account" "administrator" {
   account_id   = "administrator"
-  display_name = "${local.workspace_name} Workspace Administrator Service Account"
+  display_name = "${var.name} Workspace Administrator Service Account"
   description  = "This service account has full acces to folder ${google_folder.workspace_folder.display_name} with numeric ID: ${google_folder.workspace_folder.id}."
   project      = google_project.administrator_project.project_id
 }
 
 resource "google_service_account" "policy_administrator" {
   account_id   = "policy-administrator"
-  display_name = "${local.workspace_name} Workspace Policy Administrator Service Account"
+  display_name = "${var.name} Workspace Policy Administrator Service Account"
   description  = "This service account has full acces to policies for folder ${google_folder.workspace_folder.display_name} with numeric ID: ${google_folder.workspace_folder.id}."
   project      = google_project.administrator_project.project_id
 }
 
 resource "google_folder" "workspace_folder" {
-  display_name = "${local.workspace_name} Workspace"
-  parent       = var.parent == null ? data.google_organization.organization.name : null
+  display_name = "${var.name} Workspace"
+  parent       = data.google_organization.organization.name
 }
 
 resource "google_tags_tag_binding" "workspace_folder_tag_binding" {
@@ -215,7 +216,7 @@ resource "google_tags_tag_binding" "workspace_folder_tag_binding" {
 resource "google_kms_key_ring" "workspace_keyring" {
   project = google_project.administrator_project.project_id
 
-  name     = "${local.workspace_name}-keyring"
+  name     = "${var.name}-keyring"
   location = var.region
 
   lifecycle {
@@ -228,7 +229,7 @@ resource "google_kms_key_ring" "workspace_keyring" {
 }
 
 resource "google_kms_crypto_key" "symmetric_key" {
-  name            = "${local.workspace_name}-symmetric-key"
+  name            = "${var.name}-symmetric-key"
   key_ring        = google_kms_key_ring.workspace_keyring.id
   purpose         = "ENCRYPT_DECRYPT"
   rotation_period = "100000s"
@@ -253,14 +254,14 @@ resource "google_kms_crypto_key_version" "key_instance" {
  */
 
 resource "google_cloud_identity_group" "finops_group" {
-  display_name         = "${local.workspace_name} FinOps"
-  description          = "Financial operators of the ${local.workspace_name} workspace."
+  display_name         = "${var.name} FinOps"
+  description          = "Financial operators of the ${var.name} workspace."
   initial_group_config = "WITH_INITIAL_OWNER"
 
   parent = "customers/${var.cloud_identity_id}"
 
   group_key {
-    id = "${local.workspace_name}-finops@wansho.fr"
+    id = "${var.name}-finops@wansho.fr"
   }
 
   labels = {
@@ -273,14 +274,14 @@ resource "google_cloud_identity_group" "finops_group" {
 }
 
 resource "google_cloud_identity_group" "administrators_group" {
-  display_name         = "${local.workspace_name} Administrators"
-  description          = "Administrators of the ${local.workspace_name} workspace."
+  display_name         = "${var.name} Administrators"
+  description          = "Administrators of the ${var.name} workspace."
   initial_group_config = "WITH_INITIAL_OWNER"
 
   parent = "customers/${var.cloud_identity_id}"
 
   group_key {
-    id = "${local.workspace_name}-administrators@wansho.fr"
+    id = "${var.name}-administrators@wansho.fr"
   }
 
   labels = {
@@ -293,14 +294,14 @@ resource "google_cloud_identity_group" "administrators_group" {
 }
 
 resource "google_cloud_identity_group" "policy_administrators_group" {
-  display_name         = "${local.workspace_name} Policy Administrators"
-  description          = "Policy Administrators of the ${local.workspace_name} workspace."
+  display_name         = "${var.name} Policy Administrators"
+  description          = "Policy Administrators of the ${var.name} workspace."
   initial_group_config = "WITH_INITIAL_OWNER"
 
   parent = "customers/${var.cloud_identity_id}"
 
   group_key {
-    id = "${local.workspace_name}-policy-administrators@wansho.fr"
+    id = "${var.name}-policy-administrators@wansho.fr"
   }
 
   labels = {
@@ -379,7 +380,7 @@ data "google_iam_policy" "management" {
 
     members = [
       "serviceAccount:${google_service_account.administrator.email}",
-      "serviceAccount:builder@root-378815.iam.gserviceaccount.com"
+      "serviceAccount:${var.builder_account}"
     ]
   }
 
@@ -428,8 +429,8 @@ data "google_iam_policy" "ownership" {
     role = "roles/owner"
 
     members = [
-      var.parent == null ? "group:org-administrators@wansho.fr" : "serviceAccount:administrator@${var.parent}-workspace.iam.gserviceaccount.com",
-      "serviceAccount:builder@root-378815.iam.gserviceaccount.com"
+      "group:org-administrators@wansho.fr",
+      "serviceAccount:${var.builder_account}"
     ]
   }
 
@@ -502,8 +503,8 @@ data "google_iam_policy" "storage_management" {
     role = "roles/storage.admin"
 
     members = [
-      var.parent == null ? "group:org-administrators@wansho.fr" : "serviceAccount:administrator@${var.parent}-workspace.iam.gserviceaccount.com",
-      "serviceAccount:builder@root-378815.iam.gserviceaccount.com"
+      "group:org-administrators@wansho.fr",
+      "serviceAccount:${var.builder_account}"
     ]
   }
 
@@ -587,9 +588,21 @@ data "google_iam_policy" "kms_key_usage" {
       "serviceAccount:service-${google_project.administrator_project.number}@gs-project-accounts.iam.gserviceaccount.com",
     ]
   }
+
+  binding {
+    role = "roles/cloudkms.admin"
+
+    members = [
+      "serviceAccount:${var.builder_account}",
+    ]
+  }
 }
 
 resource "google_kms_crypto_key_iam_policy" "kms_key_policy" {
   crypto_key_id = google_kms_crypto_key.symmetric_key.id
   policy_data   = data.google_iam_policy.kms_key_usage.policy_data
+
+  depends_on = [
+    google_project_service.administrator_api["storage.googleapis.com"]
+  ]
 }

@@ -13,8 +13,7 @@ variable "billing_account" {
 variable "organization" {
   type        = string
   description = "Name of the organization hosting the workspace."
-  nullable    = true
-  default     = null
+  nullable    = false
 }
 
 variable "cloud_identity_id" {
@@ -23,45 +22,26 @@ variable "cloud_identity_id" {
   nullable    = false
 }
 
-variable "parent" {
-  type        = string
-  description = "The name of the parent workspace in the form of *{name}-v{version}*."
-  nullable    = true
-  default     = null
-
-  validation {
-    # regex(...) fails if it cannot find a match
-    condition     = can(regex("^[a-z]*-v[0-9]$", var.parent)) || var.parent == null
-    error_message = "The workspace parent name should be of the form *{name}-v{version}*."
-  }
-}
-
 variable "region" {
   type        = string
   description = "Geographical *region* for Google Cloud Platform."
   nullable    = false
 }
 
-variable "name" {
+variable "builder_account" {
   type        = string
-  default     = "root"
-  description = "Name of the new workspace."
-  validation {
-    # regex(...) fails if it cannot find a match
-    condition     = can(regex("^[a-z]*$", var.name))
-    error_message = "Only lowercase letters are allowed in the workspace name."
-  }
-  nullable = false
+  description = "E-mail of the workspace builder service account."
+  nullable    = false
+  sensitive   = true
 }
 
-variable "maj_version" {
-  type        = number
-  default     = 0
-  description = "Major version of the new workspace. Defaults to 0."
+variable "name" {
+  type        = string
+  description = "Name of the new workspace. Should be of the form [a-z][a-z0-9]{1,9}[a-z]-v[0-9]{2}."
   validation {
     # regex(...) fails if it cannot find a match
-    condition     = var.maj_version - floor(var.maj_version) == 0
-    error_message = "Major version can only be an integer."
+    condition     = can(regex("^[a-z][a-z0-9]{1,9}[a-z]-v[0-9]{2}$", var.name))
+    error_message = "The name of the workspace should be of the form [a-z][a-z0-9]{1,9}[a-z]-v[0-9]{2}."
   }
   nullable = false
 }
@@ -108,8 +88,7 @@ locals {
     "compute.images.useReadOnly",
     "compute.globalOperations.get"
   ]
-  workspace_name = "${var.name}-v${var.maj_version}"
-  index_length   = 16
+  index_length = 16
 
-  labels = var.parent == null ? { root = true } : { workspace = lower(var.name), version = tostring(var.maj_version) }
+  labels = { workspace = lower(regex("^[a-z][a-z0-9]{1,9}[a-z]", var.name)), version = tostring(regex("[0-9]{2}$", var.name)) }
 }
