@@ -16,12 +16,6 @@ variable "organization" {
   nullable    = false
 }
 
-variable "cloud_identity_id" {
-  type        = string
-  description = "The ID of the cloud identity resource."
-  nullable    = false
-}
-
 variable "region" {
   type        = string
   description = "Geographical *region* for Google Cloud Platform."
@@ -33,17 +27,6 @@ variable "builder_account" {
   description = "E-mail of the workspace builder service account."
   nullable    = false
   sensitive   = true
-}
-
-variable "name" {
-  type        = string
-  description = "Name of the new workspace. Should be of the form [a-z][a-z0-9]{1,9}[a-z]-v[0-9]{2}."
-  validation {
-    # regex(...) fails if it cannot find a match
-    condition     = can(regex("^[a-z][a-z0-9]{1,9}[a-z]-v[0-9]{2}$", var.name))
-    error_message = "The name of the workspace should be of the form [a-z][a-z0-9]{1,9}[a-z]-v[0-9]{2}."
-  }
-  nullable = false
 }
 
 variable "team" {
@@ -89,6 +72,7 @@ locals {
     "compute.globalOperations.get"
   ]
   index_length = 16
+  name         = trimsuffix(terraform.workspace, "-workspace")
 
-  labels = { workspace = lower(regex("^[a-z][a-z0-9]{1,9}[a-z]", var.name)), version = tostring(regex("[0-9]{2}$", var.name)) }
+  labels = { workspace = lower(regex("^[a-z][a-z0-9]{1,9}[a-z]", local.name)), version = tostring(regex("[0-9]{2}$", local.name)) }
 }

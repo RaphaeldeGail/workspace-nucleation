@@ -63,11 +63,14 @@ Once you are authenticated with application-default credentials, you can run the
 
 The root structure is then created.
 
+TODO: Update docs
+TODO: Create a new "ROOT" repo to documente manual actions to prepare the organization with the root project, tags, roles, etc.
+
 ## Requirements
 
 | Name | Version |
 |------|---------|
-| terraform | ~> 1.1.2 |
+| terraform | ~> 1.2.0 |
 | google | ~> 4.53.1 |
 | random | ~> 3.1.0 |
 
@@ -125,9 +128,7 @@ No modules.
 |------|-------------|------|---------|
 | billing\_account | The ID of the billing account used for the workspace. | `string` | n/a |
 | builder\_account | E-mail of the workspace builder service account. | `string` | n/a |
-| cloud\_identity\_id | The ID of the cloud identity resource. | `string` | n/a |
 | credentials | The service account credentials. | `string` | n/a |
-| name | Name of the new workspace. Should be of the form [a-z][a-z0-9]{1,9}[a-z]-v[0-9]{2}. | `string` | n/a |
 | organization | Name of the organization hosting the workspace. | `string` | n/a |
 | region | Geographical *region* for Google Cloud Platform. | `string` | n/a |
 | team | List of team members by roles, *administrator*, *policy\_administrator* and *finops*. | ```object({ administrators = list(string) policy_administrators = list(string) finops = list(string) })``` | n/a |
