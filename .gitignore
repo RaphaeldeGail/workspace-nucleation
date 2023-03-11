@@ -1,6 +1,6 @@
 # terraform working directory
 .terraform
-# output of terraform plans
+# output of terraform local plans
 plan.out
 # local terraform states (and backups)
 *.tfstate*

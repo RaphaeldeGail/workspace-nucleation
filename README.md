@@ -1,15 +1,17 @@
 <!-- BEGIN_TF_DOCS -->
-# Root
+# workspace\_setup
 
-This module sets up the root structure in a Google Cloud organization.
+This module sets up a new **workspace** in a *Google Cloud Organization*.
 
 ## Infrastructure description
 
-The code creates a root folder as well as a root Google Cloud project, hosting several critical service accounts for the organization.
+The code creates a **workspace folder** as well as a **workspace administration project**.
 
-The **project creator** service account can create any project inside the root folder.
+The **workspace administration project** hosts serveral common services, and service accounts, to operate the workspace.
 
-The **org policy** service account can apply any policy at the organization level.
+- The **administrator** service account can create any resource in the **workspace folder**.
+
+- The **policy administrator** service account can apply any policy at the **workspace folder** level.
 
 ## Organization description
 
@@ -46,17 +48,10 @@ You should also have set up a valid **Billing account** for your organization.
 
 Set the values of the required variables in terraform.tfvars (specifically billing account ID and organization name).
 
-This code should be used against with **application-default** credentials of an **Organization Administrator**.
-
-In order to login with application-default, type:
-```bash
-gcloud auth application-default login
-```
-You will be redirected to a web login interface.
-
 The organization administrator should also claim billing account usage.
 
-Once you are authenticated with application-default credentials, you can run the script:
+Once you are authenticated with terraform cloud, you can run the script:
+
 ```bash
 ./run.sh
 ```
@@ -64,7 +59,6 @@ Once you are authenticated with application-default credentials, you can run the
 The root structure is then created.
 
 TODO: Update docs
-TODO: Create a new "ROOT" repo to documente manual actions to prepare the organization with the root project, tags, roles, etc.
 
 ## Requirements
 

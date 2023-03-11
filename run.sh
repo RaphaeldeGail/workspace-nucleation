@@ -1,125 +1,38 @@
 #!/bin/bash
 
-DRY_RUN=false
-# while getopts 'df:' OPTION; do
-#   case "$OPTION" in 
-#     d) 
-#       echo "This will be a dry run test..."
-#       DRY_RUN=true
-#       ;;
-#     f)
-#       WORKSPACE_FILE=$OPTARG ;;
-#     ?) 
-#       echo "Usage: $(basename $0) [-d] -f FILENAME"
-#       exit 1
-#       ;;
-#   esac
-# done
-
-# if ! [ -r $WORKSPACE_FILE ]; then
-#     echo "Usage: $(basename $0) [-d] -f FILENAME"
-#     echo "No file found to be read."
-#     exit 1
-# fi
-
-# The credentials file below should be generated prior to this script execution.
-# if [ ! -f $HOME/.config/gcloud/application_default_credentials.json ]; then
-#     echo 'The application default credentials could not be found.'
-#     echo "$HOME/.config/gcloud/application_default_credentials.json: File not found."
-#     echo 'Please log in to GCP prior to runnning this script with: `gcloud auth application-default login`'
-#     exit 1
-# fi
-# export GOOGLE_APPLICATION_CREDENTIALS="$HOME/.config/gcloud/application_default_credentials.json"
 # Terraform settings
 export TF_IN_AUTOMATION="true"
 export TF_INPUT=0
+TF_CLI_ARGS="-no-color"
+TF_CLI_ARGS_fmt="-diff -recursive"
+# Workspace selected from argument call
+export TF_WORKSPACE="$1-workspace"
 # Uncomment the following line to enable DEBUG logging
 #export TF_LOG="debug"
-# Create variables workspace variables from file.
-WORKSPACE=$1
+
+# Function to call any terraform subcommand.
+action() {
+    echo -ne "\taction: " $(echo $1 | tr '[:lower:]' '[:upper:]') " ... "
+    if [ "$1" == "docs" ]; then
+        RC=$(terraform-docs .)
+    else
+        RC=$(terraform $1)
+    fi
+    if [ $? != 0 ]; then
+        echo "failed."
+        echo $RC
+        exit 1
+    fi
+    echo "succeeded."
+}
 
 echo "*start: $(date)"
 
-echo -ne 'Linting... '
-RC=$(terraform fmt -diff -recursive .)
-if [ $? != 0 ]; then
-    echo 'Lint failed.'
-    echo $RC
-    exit 1
-fi
-echo 'Successfully lint.'
-
-echo -ne 'Documenting... '
-RC=$(terraform-docs .)
-if [ $? != 0 ]; then
-    echo 'Documentation failed.'
-    echo $RC
-    exit 1
-fi
-echo 'Succesfully documented.'
-
-echo -ne 'Initializing working directory... '
-RC=$(terraform init -no-color)
-if [ $? != 0 ]; then
-    echo 'Initialization failed.'
-    echo $RC
-    exit 1
-fi
-echo -ne 'Working directory initialized... '
-if ! terraform workspace select "$WORKSPACE-workspace"; then
-    terraform workspace new "$WORKSPACE-workspace"
-fi
-if [ "$(terraform workspace show)" != "$WORKSPACE-workspace" ]; then
-    echo 'Workspace could not be selected.'
-    echo $RC
-    exit 1
-fi
-echo "Workspace selected: $WORKSPACE-workspace"
-
-echo -ne 'Validating code... '
-RC=$(terraform validate -no-color)
-if [ $? != 0 ]; then
-    echo 'Validation failed.'
-    echo $RC
-    exit 1
-fi
-echo 'Code validated.'
-
-# echo -ne 'Planning infrastructure update... '
-# RC=$(terraform plan -no-color)
-# if [ $? != 0 ]; then
-#     echo 'Infrastructure plan failed.'
-#     echo $RC
-#     exit 1
-# fi
-# echo 'Infrastructure update planned.'
-
-# RC=$(terraform show -json plan.out | jq '( .output_changes | to_entries | .[] | select(.value.actions != ["no-op"]) | {(.key): (.value.actions)} ), ( .resource_changes[] |  select(.change.actions != ["no-op"]) | {(.address): (.change.actions)} )')
-# if [ -z "$RC" ];
-# then
-#     echo '*WARNING: no infrastructure modifications are scheduled in this plan!'
-#     echo "*end: $(date)"
-#     exit 0
-# else
-#     echo '***Plan***'
-#     echo $RC | sed -E 's/^\{// ; s/\}$// ; s/\}\s\{/\n/g' | cat -b - # A simple script to lay each resource of the plane on a single numbered line.
-#     echo '******'
-# fi
-
-if $DRY_RUN; then
-    echo "*end: $(date)"
-    exit 0
-fi
-
-echo -ne 'Updating infrastructure... '
-terraform apply -no-color
-if [ $? != 0 ]; then
-    echo 'Infrastructure update failed.'
-    # Uncomment line below to display full logs on stdout before the issue.
-    #echo $RC
-    exit 1
-fi
-echo 'Infrastructre updated.'
+action "fmt"
+action "docs"
+action "init"
+action "validate"
+action "apply"
 
 echo "*end: $(date)"
 exit 0
