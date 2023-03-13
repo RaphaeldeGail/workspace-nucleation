@@ -22,7 +22,7 @@ Security is then preserved since the original organization is never used apart f
 Below is a simple diagram presenting the structure:
 
 ![organizational-structure](docs/organizational-structure.png)
-*Figure - Organization diagram for the root structure.*
+*Figure - Organization diagram for the workspace structure.*
 
 ### Cloud identity
 
@@ -31,6 +31,9 @@ Users and groups
 ### Cloud organization
 
 IAM and resources
+
+![functional-structure](docs/functional-structure.png)
+*Figure - Functional diagram for the workspace structure.*
 
 ### Root project
 
@@ -56,7 +59,7 @@ Once you are authenticated with terraform cloud, you can run the script:
 ./run.sh
 ```
 
-The root structure is then created.
+The workspace structure is then created.
 
 TODO: Update docs
 

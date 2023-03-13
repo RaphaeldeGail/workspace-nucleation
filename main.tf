@@ -22,7 +22,7 @@
  * Below is a simple diagram presenting the structure:
  *
  * ![organizational-structure](docs/organizational-structure.png)
- * *Figure - Organization diagram for the root structure.*
+ * *Figure - Organization diagram for the workspace structure.*
  *
  * ### Cloud identity
  *
@@ -31,6 +31,9 @@
  * ### Cloud organization
  *
  * IAM and resources
+ *
+ * ![functional-structure](docs/functional-structure.png)
+ * *Figure - Functional diagram for the workspace structure.*
  *
  * ### Root project
  *
@@ -56,7 +59,7 @@
  * ./run.sh
  * ```
  *
- * The root structure is then created.
+ * The workspace structure is then created.
  *
  * TODO: Update docs
  *
@@ -265,7 +268,7 @@ resource "google_cloud_identity_group" "finops_group" {
   parent = "customers/${data.google_organization.organization.directory_customer_id}"
 
   group_key {
-    id = "${local.name}-finops@wansho.fr"
+    id = "${local.name}-finops@${var.organization}"
   }
 
   labels = {
@@ -285,7 +288,7 @@ resource "google_cloud_identity_group" "administrators_group" {
   parent = "customers/${data.google_organization.organization.directory_customer_id}"
 
   group_key {
-    id = "${local.name}-administrators@wansho.fr"
+    id = "${local.name}-administrators@${var.organization}"
   }
 
   labels = {
@@ -305,7 +308,7 @@ resource "google_cloud_identity_group" "policy_administrators_group" {
   parent = "customers/${data.google_organization.organization.directory_customer_id}"
 
   group_key {
-    id = "${local.name}-policy-administrators@wansho.fr"
+    id = "${local.name}-policy-administrators@${var.organization}"
   }
 
   labels = {
@@ -433,7 +436,7 @@ data "google_iam_policy" "ownership" {
     role = "roles/owner"
 
     members = [
-      "group:org-administrators@wansho.fr",
+      "group:org-administrators@${var.organization}",
       "serviceAccount:${var.builder_account}"
     ]
   }
@@ -507,7 +510,7 @@ data "google_iam_policy" "storage_management" {
     role = "roles/storage.admin"
 
     members = [
-      "group:org-administrators@wansho.fr",
+      "group:org-administrators@${var.organization}",
       "serviceAccount:${var.builder_account}"
     ]
   }
