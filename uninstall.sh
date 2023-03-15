@@ -19,4 +19,6 @@ gcloud projects delete $WORKSPACE-administration
 gcloud resource-manager tags values delete $ORGANIZATION_ID/workspace/$WORKSPACE
 
 # Clear the terraform Cloud workspace without a destroy plan
+export TF_WORKSPACE="$WORKSPACE-workspace"
+terraform init
 for x in $(terraform state list); do terraform state rm "$x"; done

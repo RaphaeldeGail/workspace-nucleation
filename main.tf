@@ -3,55 +3,90 @@
  * 
  * This module sets up a new **workspace** in a *Google Cloud Organization*.
  *
- * ## Infrastructure description
+ * ## Introduction
  *
- * The code creates a **workspace folder** as well as a **workspace administration project**.
- * 
- * The **workspace administration project** hosts serveral common services, and service accounts, to operate the workspace.
+ * A **workspace** is an infrastructure concept for developers to autonomously manage their infrastrucure resources and environments.
  *
- * - The **administrator** service account can create any resource in the **workspace folder**.
+ * ### What is a workspace?
  *
- * - The **policy administrator** service account can apply any policy at the **workspace folder** level.
+ * A **workspace** is a dedicated set of cloud resources for a particular project.
+ * It is isolated from other workspaces, and relies on specific common services, such as DNS, GCS bucket, etc.
  *
- * ## Organization description
+ * ### What is the use of a workspace?
  *
- * The root structure attemps to create a sub-organization inside the Google Cloud Platform.
+ * Within a workspace, a team can create infrastructure resources in different environments with full autonomy.
+ * The resources are bound to a minimal set of common services (DNS, etc.) to ensure correct integration with other projects and the outer world.
  *
- * Security is then preserved since the original organization is never used apart for creating the root structure.
+ * ### How do I use a workspace?
+ *
+ * Once your workspace has been delivered, you can use it to create your own GCP projects within your own folder.
+ * You can create almost any resources in those projects and group them as you need (per environments, per domain, etc.).
+ * You can also use the common services of the workspace to manage resources that span among the whole workspace, such as *compute images* for servers among all environments, etc.
+ *
+ * ### How do I create a workspace?
+ *
+ * To create a workspace, you will need a name for the workspace (only lowercase letters), and a list of team members for the three default groups: admins, policy-admins and finops.
+ * You also need to use this code and follow the instructions below.
+ *
+ * ## Workspace description
+ *
+ * Below is a comprehensive description of a Workspace.
+ *
+ * ### Workspace infrastructure
+ *
+ * *List of system resources involved, with short description.*
+ *
+ * - *ADM project*
+ * - *Workspace folder*
+ * - *Service accounts*
+ * - *GCS Bucket*
+ * - *Keyring*
+ * - *Tags*
+ *
+ * ### Workspace organization
+ *
+ * *What is in what?*
+ *
+ * - ADM project is in Organization
+ * - Workspace folder in Organization
+ * - Root project is in Organization
+ * - Workspace folder contains future projects (per environment, per usage, etc.)
+ * - ADM project manages the Workspace folder as well as other common services (DNS, bucket, compute images, etc.)
+ * - resources are identified by tag
  *
  * Below is a simple diagram presenting the structure:
  *
- * ![organizational-structure](docs/organizational-structure.png)
+ * ![organizational-structure](docs/organizational-structure.svg)
  * *Figure - Organization diagram for the workspace structure.*
  *
- * ### Cloud identity
+ * ### Workspace management
  *
- * Users and groups
+ * *Who does what?*
  *
- * ### Cloud organization
+ * - Google groups have reading access to all the workspace
+ * - Service accounts have read/write access to all the workspace (create projects, act on common services, etc.)
+ * - Google groups have impersonation access for service accounts
  *
- * IAM and resources
- *
- * ![functional-structure](docs/functional-structure.png)
+ * ![functional-structure](docs/functional-structure.svg)
  * *Figure - Functional diagram for the workspace structure.*
  *
- * ### Root project
+ * ## Repository presentation
  *
- * Service accounts
+ * ### Repository structure
+ * 
+ * *What is in this repo?*
  *
- * ### Root folder
+ * ### Repository usage
  *
- * Workspaces
+ * *How do I use this repo to create a workspace?*
  *
- * ## Usage
+ * - Terraform Cloud config (organization, workspace, variables)
+ * - Terraform client config
+ * - Google Cloud Organization
+ * - Root project (Root setup)
  *
  * Before running this code, you should first create a Google Cloud Platform **organization** (see official documentation).
  *
- * You should also have set up a valid **Billing account** for your organization.
- *
- * Set the values of the required variables in terraform.tfvars (specifically billing account ID and organization name).
- *
- * The organization administrator should also claim billing account usage.
  *
  * Once you are authenticated with terraform cloud, you can run the script:
  *
@@ -61,8 +96,10 @@
  *
  * The workspace structure is then created.
  *
- * TODO: Update docs
+ * TODO: add workload identity pool
+ * TODO: add a DNS zone (public and private)
  *
+ * ***
  */
 
 terraform {
