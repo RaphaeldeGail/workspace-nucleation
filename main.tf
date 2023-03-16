@@ -32,43 +32,60 @@
  *
  * Below is a comprehensive description of a Workspace.
  *
- * ### Workspace infrastructure
- *
- * *List of system resources involved, with short description.*
- *
- * - *ADM project*
- * - *Workspace folder*
- * - *Service accounts*
- * - *GCS Bucket*
- * - *Keyring*
- * - *Tags*
- *
  * ### Workspace organization
  *
- * *What is in what?*
+ * A workspace is made of three main parts:
  *
- * - ADM project is in Organization
- * - Workspace folder in Organization
- * - Root project is in Organization
- * - Workspace folder contains future projects (per environment, per usage, etc.)
- * - ADM project manages the Workspace folder as well as other common services (DNS, bucket, compute images, etc.)
- * - resources are identified by tag
+ * - the workspace folder where the team can create all the projects needed for their project,
+ * - the ADM (administration) project, where the team can manager the workspace and its common services,
+ * - three Google groups, where team members will be added, and which control the workspace.
  *
- * Below is a simple diagram presenting the structure:
+ * The three Google groups created are:
+ *
+ * - The *FinOps Group*, with access to billing information about the workspace,
+ * - The *Administrators Group*, with access to the workspace,
+ * - The *Policy Administrators Group*, with access to policies for the workspace folder.
+ *
+ * Both the workspace folder and the ADM project belong to the organization level (no parent folder).
+ * The workspace folder is initially empty and left to the team to use for their project.
+ * The ADM project is initially setup with several services:
+ *
+ * - Service accounts to manipulate the workspace,
+ * - a GCS bucket to store data across the workspace, for instance some configuration files that belong to all the environments,
+ * - Access to compute image storage,
+ * - a keyring to encrypt the GCS data with a dedicated key.
+ *
+ * The service accounts in the ADM project are:
+ *
+ * - the *administrator* service account, with read/write over the workspace, and the workspace folder specifically,
+ * - the *policy-administrator* service account, with management rights for policies over the workspace folder.
+ *
+ * On top of these resources, the workspace is also tagged at several level:
+ *
+ * - The workspace folder is tagged with the *workspace* key and the **workspace name** as the value,
+ * - the ADM project and the GCS bucket are identically tagged.
+ *
+ * Below is a simple diagram presenting the organization:
  *
  * ![organizational-structure](docs/organizational-structure.svg)
  * *Figure - Organization diagram for the workspace structure.*
  *
  * ### Workspace management
  *
- * *Who does what?*
+ * The workspace is mainly managed by service accounts, with read/write access to resources.
+ * Google groups have mainly read access, but can also impersonate the service accounts.
  *
- * - Google groups have reading access to all the workspace
- * - Service accounts have read/write access to all the workspace (create projects, act on common services, etc.)
- * - Google groups have impersonation access for service accounts
+ * The *administrator* service account is the owner of the workspace folder and thus can create any resource in it.
+ * It has also administrative rights to the GCS bucket and the compute image storage.
+ *
+ * Below is a simple diagram presenting the organization:
  *
  * ![functional-structure](docs/functional-structure.svg)
  * *Figure - Functional diagram for the workspace structure.*
+ *
+ * On top of the permissions within the team, the organization administrators remain the owners of the ADM project and of the workspace folder, by inheritance.
+ * Only the *builder* service account can create a workspace.
+ * Only an organization administrator can delete a workspace.
  *
  * ## Repository presentation
  *
