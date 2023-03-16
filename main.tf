@@ -10,12 +10,12 @@
  * ### What is a workspace?
  *
  * A **workspace** is a dedicated set of cloud resources for a particular project.
- * It is isolated from other workspaces, and relies on specific common services, such as DNS, GCS bucket, etc.
+ * It is isolated from other workspaces, and relies on specific common services, such as DNS zone, GCS bucket, etc.
  *
  * ### What is the use of a workspace?
  *
  * Within a workspace, a team can create infrastructure resources in different environments with full autonomy.
- * The resources are bound to a minimal set of common services (DNS, etc.) to ensure correct integration with other projects and the outer world.
+ * The resources are bound to a minimal set of common services (DNS zone, etc.) to ensure correct integration with other projects and the outer world.
  *
  * ### How do I use a workspace?
  *
@@ -30,14 +30,14 @@
  *
  * ## Workspace description
  *
- * Below is a comprehensive description of a Workspace.
+ * Below is a comprehensive description of a workspace.
  *
  * ### Workspace organization
  *
  * A workspace is made of three main parts:
  *
  * - the workspace folder where the team can create all the projects needed for their project,
- * - the ADM (administration) project, where the team can manager the workspace and its common services,
+ * - the ADM (administration) project, where the team can manage the workspace and its common services,
  * - three Google groups, where team members will be added, and which control the workspace.
  *
  * The three Google groups created are:
@@ -78,16 +78,22 @@
  * The *administrator* service account is the owner of the workspace folder and thus can create any resource in it.
  * It has also administrative rights to the GCS bucket and the compute image storage.
  *
+ * The *Administrators Group* can impersonate the *administrator* service account.
+ * The *Policy Administrators Group* can impersonate the *policy-administrator* service account.
+ *
  * Below is a simple diagram presenting the organization:
  *
  * ![functional-structure](docs/functional-structure.svg)
- * *Figure - Functional diagram for the workspace structure.*
+ * *Figure - Functional diagram for the workspace structure -*
+ * *The yellow blocks represent IAM permissions bound to a user on a resource.*
  *
  * On top of the permissions within the team, the organization administrators remain the owners of the ADM project and of the workspace folder, by inheritance.
  * Only the *builder* service account can create a workspace.
  * Only an organization administrator can delete a workspace.
  *
  * ## Repository presentation
+ *
+ * TODO: HERE
  *
  * ### Repository structure
  * 
@@ -101,9 +107,10 @@
  * - Terraform client config
  * - Google Cloud Organization
  * - Root project (Root setup)
+ * - builder account with permissions
+ * - secretary account
  *
  * Before running this code, you should first create a Google Cloud Platform **organization** (see official documentation).
- *
  *
  * Once you are authenticated with terraform cloud, you can run the script:
  *
@@ -115,17 +122,12 @@
  *
  * TODO: add workload identity pool
  * TODO: add a DNS zone (public and private)
+ * TODO: add budget for workspace
  *
  * ***
  */
 
 terraform {
-  cloud {
-    organization = "wansho"
-    workspaces {
-      tags = ["workspace", "wansho", "gcp"]
-    }
-  }
   required_version = "~> 1.2.0"
   required_providers {
     google = {
@@ -140,10 +142,7 @@ terraform {
 }
 
 provider "google" {
-  credentials = var.credentials
-
-  impersonate_service_account = var.builder_account
-  region                      = var.region
+  region = var.region
 }
 
 provider "random" {
@@ -490,7 +489,7 @@ data "google_iam_policy" "ownership" {
     role = "roles/owner"
 
     members = [
-      "group:org-administrators@${var.organization}",
+      "group:${var.organization_administrators_group}@${var.organization}",
       "serviceAccount:${var.builder_account}"
     ]
   }
@@ -564,7 +563,7 @@ data "google_iam_policy" "storage_management" {
     role = "roles/storage.admin"
 
     members = [
-      "group:org-administrators@${var.organization}",
+      "group:${var.organization_administrators_group}@${var.organization}",
       "serviceAccount:${var.builder_account}"
     ]
   }

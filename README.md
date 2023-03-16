@@ -10,12 +10,12 @@ A **workspace** is an infrastructure concept for developers to autonomously mana
 ### What is a workspace?
 
 A **workspace** is a dedicated set of cloud resources for a particular project.
-It is isolated from other workspaces, and relies on specific common services, such as DNS, GCS bucket, etc.
+It is isolated from other workspaces, and relies on specific common services, such as DNS zone, GCS bucket, etc.
 
 ### What is the use of a workspace?
 
 Within a workspace, a team can create infrastructure resources in different environments with full autonomy.
-The resources are bound to a minimal set of common services (DNS, etc.) to ensure correct integration with other projects and the outer world.
+The resources are bound to a minimal set of common services (DNS zone, etc.) to ensure correct integration with other projects and the outer world.
 
 ### How do I use a workspace?
 
@@ -30,14 +30,14 @@ You also need to use this code and follow the instructions below.
 
 ## Workspace description
 
-Below is a comprehensive description of a Workspace.
+Below is a comprehensive description of a workspace.
 
 ### Workspace organization
 
 A workspace is made of three main parts:
 
 - the workspace folder where the team can create all the projects needed for their project,
-- the ADM (administration) project, where the team can manager the workspace and its common services,
+- the ADM (administration) project, where the team can manage the workspace and its common services,
 - three Google groups, where team members will be added, and which control the workspace.
 
 The three Google groups created are:
@@ -78,16 +78,22 @@ Google groups have mainly read access, but can also impersonate the service acco
 The *administrator* service account is the owner of the workspace folder and thus can create any resource in it.
 It has also administrative rights to the GCS bucket and the compute image storage.
 
+The *Administrators Group* can impersonate the *administrator* service account.
+The *Policy Administrators Group* can impersonate the *policy-administrator* service account.
+
 Below is a simple diagram presenting the organization:
 
 ![functional-structure](docs/functional-structure.svg)
-*Figure - Functional diagram for the workspace structure.*
+*Figure - Functional diagram for the workspace structure -*
+*The yellow blocks represent IAM permissions bound to a user on a resource.*
 
 On top of the permissions within the team, the organization administrators remain the owners of the ADM project and of the workspace folder, by inheritance.
 Only the *builder* service account can create a workspace.
 Only an organization administrator can delete a workspace.
 
 ## Repository presentation
+
+TODO: HERE
 
 ### Repository structure
 
@@ -101,6 +107,8 @@ Only an organization administrator can delete a workspace.
 - Terraform client config
 - Google Cloud Organization
 - Root project (Root setup)
+- builder account with permissions
+- secretary account
 
 Before running this code, you should first create a Google Cloud Platform **organization** (see official documentation).
 
@@ -114,6 +122,7 @@ The workspace structure is then created.
 
 TODO: add workload identity pool
 TODO: add a DNS zone (public and private)
+TODO: add budget for workspace
 
 ***
 
@@ -178,9 +187,9 @@ No modules.
 | Name | Description | Type | Default |
 |------|-------------|------|---------|
 | billing\_account | The ID of the billing account used for the workspace. | `string` | n/a |
-| builder\_account | E-mail of the workspace builder service account. | `string` | n/a |
-| credentials | The service account credentials. | `string` | n/a |
+| builder\_account | The e-mail of the service account used to build the workspace. | `string` | n/a |
 | organization | Name of the organization hosting the workspace. | `string` | n/a |
+| organization\_administrators\_group | The name of the Google group for organization administrators. The name should not contain the organization @domainName. | `string` | n/a |
 | region | Geographical *region* for Google Cloud Platform. | `string` | n/a |
 | team | List of team members by roles, *administrator*, *policy\_administrator* and *finops*. | ```object({ administrators = list(string) policy_administrators = list(string) finops = list(string) })``` | n/a |
 

@@ -1,9 +1,3 @@
-variable "credentials" {
-  type        = string
-  description = "The service account credentials."
-  nullable    = false
-}
-
 variable "billing_account" {
   type        = string
   description = "The ID of the billing account used for the workspace."
@@ -24,7 +18,7 @@ variable "region" {
 
 variable "builder_account" {
   type        = string
-  description = "E-mail of the workspace builder service account."
+  description = "The e-mail of the service account used to build the workspace."
   nullable    = false
   sensitive   = true
 }
@@ -37,6 +31,17 @@ variable "team" {
   })
   description = "List of team members by roles, *administrator*, *policy_administrator* and *finops*."
   nullable    = false
+}
+
+variable "organization_administrators_group" {
+  type        = string
+  description = "The name of the Google group for organization administrators. The name should not contain the organization @domainName."
+  nullable    = false
+
+  validation {
+    condition     = can(regex("^[^@]*$", var.organization_administrators_group))
+    error_message = "The name of the group should not contain the organization @domainName."
+  }
 }
 
 locals {
