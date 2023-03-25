@@ -1,3 +1,9 @@
+variable "project" {
+  type        = string
+  description = "The ID of the root project for the organization. Used to create workspaces."
+  nullable    = false
+}
+
 variable "billing_account" {
   type        = string
   description = "The ID of the billing account used for the workspace."

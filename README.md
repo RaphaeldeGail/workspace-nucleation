@@ -120,9 +120,7 @@ Once you are authenticated with terraform cloud, you can run the script:
 
 The workspace structure is then created.
 
-TODO: add workload identity pool
 TODO: add a DNS zone (public and private)
-TODO: add budget for workspace
 
 ***
 
@@ -143,6 +141,7 @@ No modules.
 | Name | Type |
 |------|------|
 | [google_billing_account_iam_policy.billing_account_policy](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/billing_account_iam_policy) | resource |
+| [google_billing_budget.workspace_budget](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/billing_budget) | resource |
 | [google_cloud_identity_group.administrators_group](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/cloud_identity_group) | resource |
 | [google_cloud_identity_group.finops_group](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/cloud_identity_group) | resource |
 | [google_cloud_identity_group.policy_administrators_group](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/cloud_identity_group) | resource |
@@ -190,6 +189,7 @@ No modules.
 | builder\_account | The e-mail of the service account used to build the workspace. | `string` | n/a |
 | organization | Name of the organization hosting the workspace. | `string` | n/a |
 | organization\_administrators\_group | The name of the Google group for organization administrators. The name should not contain the organization @domainName. | `string` | n/a |
+| project | The ID of the root project for the organization. Used to create workspaces. | `string` | n/a |
 | region | Geographical *region* for Google Cloud Platform. | `string` | n/a |
 | team | List of team members by roles, *administrator*, *policy\_administrator* and *finops*. | ```object({ administrators = list(string) policy_administrators = list(string) finops = list(string) })``` | n/a |
 

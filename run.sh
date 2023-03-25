@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# TODO: Run fails if apply requires confirmation to create resources.
+
 # Terraform settings
 export TF_IN_AUTOMATION="true"
 export TF_INPUT=0

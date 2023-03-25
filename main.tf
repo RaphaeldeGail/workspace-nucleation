@@ -120,9 +120,7 @@
  *
  * The workspace structure is then created.
  *
- * TODO: add workload identity pool
  * TODO: add a DNS zone (public and private)
- * TODO: add budget for workspace
  *
  * ***
  */
@@ -142,7 +140,8 @@ terraform {
 }
 
 provider "google" {
-  region = var.region
+  region  = var.region
+  project = var.project
 }
 
 provider "random" {
@@ -307,6 +306,33 @@ resource "google_kms_crypto_key" "symmetric_key" {
 
 resource "google_kms_crypto_key_version" "key_instance" {
   crypto_key = google_kms_crypto_key.symmetric_key.id
+}
+
+resource "google_billing_budget" "workspace_budget" {
+  billing_account = var.billing_account
+  display_name    = "${local.name} Workspace Billing Budget"
+  amount {
+    specified_amount {
+      currency_code = "EUR"
+      units         = "10"
+    }
+  }
+  threshold_rules {
+    threshold_percent = 0.5
+    spend_basis       = "FORECASTED_SPEND"
+  }
+  threshold_rules {
+    threshold_percent = 0.9
+    spend_basis       = "FORECASTED_SPEND"
+  }
+  threshold_rules {
+    threshold_percent = 1.0
+    spend_basis       = "CURRENT_SPEND"
+  }
+  budget_filter {
+    projects = ["projects/${google_project.administrator_project.number}"]
+
+  }
 }
 
 /**
