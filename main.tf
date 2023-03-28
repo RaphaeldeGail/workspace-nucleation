@@ -311,7 +311,7 @@ resource "google_kms_crypto_key_version" "key_instance" {
 resource "google_dns_managed_zone" "workspace_dns_zone" {
   project       = google_project.administrator_project.project_id
   name          = "${local.name}-public-zone"
-  dns_name      = "${local.name}.${var.organization}"
+  dns_name      = "${local.name}.${var.organization}."
   description   = "Public DNS zone for ${local.name} workspace."
   labels        = merge(local.labels, { uid = random_string.workspace_uid.result })
   visibility    = "public"
