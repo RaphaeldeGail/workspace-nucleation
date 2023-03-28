@@ -308,6 +308,28 @@ resource "google_kms_crypto_key_version" "key_instance" {
   crypto_key = google_kms_crypto_key.symmetric_key.id
 }
 
+resource "google_dns_managed_zone" "workspace_dns_zone" {
+  project       = google_project.administrator_project.project_id
+  name          = "${local.name} Public DNS zone"
+  dns_name      = "${local.name}.${var.organization}"
+  description   = "Public DNS zone for ${local.name} workspace."
+  labels        = merge(local.labels, { uid = random_string.workspace_uid.result })
+  visibility    = "public"
+  force_destroy = false
+
+  # dnssec_config {
+  #   kind = ""
+  #   non_existence "nsec3"
+  #   state = "on"
+  #   default_key_specs {
+  #     algorithm = "rsasha256"
+  #     key_length = 2048
+  #     key_type = "keySigning" # "zoneSigning"
+  #     kind = ""
+  #   }
+  #}
+}
+
 resource "google_billing_budget" "workspace_budget" {
   billing_account = var.billing_account
   display_name    = "${local.name} Workspace Billing Budget"
