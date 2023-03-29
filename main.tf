@@ -120,7 +120,7 @@
  *
  * The workspace structure is then created.
  *
- * TODO: add a DNS zone (public and private)
+ * TODO: DNSSEC config
  *
  * ***
  */
@@ -317,17 +317,23 @@ resource "google_dns_managed_zone" "workspace_dns_zone" {
   visibility    = "public"
   force_destroy = false
 
-  # dnssec_config {
-  #   kind = ""
-  #   non_existence "nsec3"
-  #   state = "on"
-  #   default_key_specs {
-  #     algorithm = "rsasha256"
-  #     key_length = 2048
-  #     key_type = "keySigning" # "zoneSigning"
-  #     kind = ""
-  #   }
-  #}
+  dnssec_config {
+    kind          = "dns#managedZoneDnsSecConfig"
+    non_existence = "nsec3"
+    state         = "on"
+    default_key_specs {
+      algorithm  = "rsasha256"
+      key_length = 2048
+      key_type   = "zoneSigning"
+      kind       = "dns#dnsKeySpec"
+    }
+    default_key_specs {
+      algorithm  = "rsasha256"
+      key_length = 2048
+      key_type   = "keySigning"
+      kind       = "dns#dnsKeySpec"
+    }
+  }
 }
 
 resource "google_billing_budget" "workspace_budget" {

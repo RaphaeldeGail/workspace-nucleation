@@ -120,7 +120,7 @@ Once you are authenticated with terraform cloud, you can run the script:
 
 The workspace structure is then created.
 
-TODO: add a DNS zone (public and private)
+TODO: DNSSEC config
 
 ***
 
