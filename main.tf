@@ -749,3 +749,24 @@ resource "google_kms_crypto_key_iam_policy" "kms_key_policy" {
     google_project_service.administrator_api["storage.googleapis.com"]
   ]
 }
+
+data "google_iam_policy" "dns_management" {
+  binding {
+    role = "roles/dns.admin"
+    members = [
+      "serviceAccount:${google_service_account.administrator.email}",
+    ]
+  }
+  binding {
+    role = "roles/dns.reader"
+    members = [
+      "group:${google_cloud_identity_group.administrators_group.group_key[0].id}",
+    ]
+  }
+}
+
+resource "google_dns_managed_zone_iam_policy" "dns_policy" {
+  project      = google_dns_managed_zone.workspace_dns_zone.project
+  managed_zone = google_dns_managed_zone.workspace_dns_zone.name
+  policy_data  = data.google_iam_policy.dns_management.policy_data
+}
