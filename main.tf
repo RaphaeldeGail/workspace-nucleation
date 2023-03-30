@@ -362,7 +362,7 @@ resource "google_dns_record_set" "workspace_ds_record" {
 
   managed_zone = data.google_dns_managed_zone.workspaces_zone.name
 
-  rrdatas = data.google_dns_keys.workspace_dns_keys.key_signing_keys[0].ds_record
+  rrdatas = [data.google_dns_keys.workspace_dns_keys.key_signing_keys[0].ds_record]
 }
 
 resource "google_billing_budget" "workspace_budget" {
