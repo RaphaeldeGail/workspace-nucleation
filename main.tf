@@ -501,6 +501,14 @@ data "google_iam_policy" "management" {
   }
 
   binding {
+    role = "roles/resourcemanager.folderIamAdmin"
+
+    members = [
+      "serviceAccount:${var.builder_account}",
+    ]
+  }
+
+  binding {
     role = "roles/resourcemanager.projectCreator"
 
     members = [
@@ -618,6 +626,7 @@ data "google_iam_policy" "storage_management" {
     role = "roles/storage.admin"
 
     members = [
+      "serviceAccount:${var.builder_account}",
       "serviceAccount:${google_service_account.administrator.email}",
     ]
   }
