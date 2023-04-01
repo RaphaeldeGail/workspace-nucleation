@@ -39,15 +39,10 @@ variable "team" {
   nullable    = false
 }
 
-variable "organization_administrators_group" {
-  type        = string
-  description = "The name of the Google group for organization administrators. The name should not contain the organization @domainName."
+variable "budget_allowed" {
+  type        = number
+  description = "The monthly amount allowed for the workspace. Must be an integer."
   nullable    = false
-
-  validation {
-    condition     = can(regex("^[^@]*$", var.organization_administrators_group))
-    error_message = "The name of the group should not contain the organization @domainName."
-  }
 }
 
 locals {

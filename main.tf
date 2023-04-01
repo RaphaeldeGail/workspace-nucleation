@@ -93,6 +93,8 @@
  *
  * ## Repository presentation
  *
+ * We discuss here on the repository structure itself.
+ *
  * TODO: HERE
  *
  * ### Repository structure
@@ -119,8 +121,6 @@
  * ```
  *
  * The workspace structure is then created.
- *
- * TODO: DNSSEC config
  *
  * ***
  */
@@ -308,15 +308,10 @@ resource "google_kms_crypto_key_version" "key_instance" {
   crypto_key = google_kms_crypto_key.symmetric_key.id
 }
 
-data "google_dns_managed_zone" "workspaces_zone" {
-  project = var.project
-  name    = "workspaces-zone"
-}
-
 resource "google_dns_managed_zone" "workspace_dns_zone" {
   project       = google_project.administrator_project.project_id
   name          = "${local.name}-public-zone"
-  dns_name      = "${local.name}.${data.google_dns_managed_zone.workspaces_zone.dns_name}"
+  dns_name      = "${local.name}.${var.organization}."
   description   = "Public DNS zone for ${local.name} workspace."
   labels        = merge(local.labels, { uid = random_string.workspace_uid.result })
   visibility    = "public"
@@ -341,28 +336,8 @@ resource "google_dns_managed_zone" "workspace_dns_zone" {
   }
 }
 
-resource "google_dns_record_set" "workspace_ns_record" {
-  name = "${local.name}.${data.google_dns_managed_zone.workspaces_zone.dns_name}"
-  type = "NS"
-  ttl  = 21600
-
-  managed_zone = data.google_dns_managed_zone.workspaces_zone.name
-
-  rrdatas = google_dns_managed_zone.workspace_dns_zone.name_servers
-}
-
 data "google_dns_keys" "workspace_dns_keys" {
   managed_zone = google_dns_managed_zone.workspace_dns_zone.id
-}
-
-resource "google_dns_record_set" "workspace_ds_record" {
-  name = "${local.name}.${data.google_dns_managed_zone.workspaces_zone.dns_name}"
-  type = "DS"
-  ttl  = 3600
-
-  managed_zone = data.google_dns_managed_zone.workspaces_zone.name
-
-  rrdatas = [data.google_dns_keys.workspace_dns_keys.key_signing_keys[0].ds_record]
 }
 
 resource "google_billing_budget" "workspace_budget" {
@@ -371,24 +346,23 @@ resource "google_billing_budget" "workspace_budget" {
   amount {
     specified_amount {
       currency_code = "EUR"
-      units         = "10"
+      units         = tostring(var.budget_allowed)
     }
   }
   threshold_rules {
-    threshold_percent = 0.5
-    spend_basis       = "FORECASTED_SPEND"
+    threshold_percent = 1.0
+    spend_basis       = "CURRENT_SPEND"
   }
   threshold_rules {
     threshold_percent = 0.9
     spend_basis       = "FORECASTED_SPEND"
   }
   threshold_rules {
-    threshold_percent = 1.0
-    spend_basis       = "CURRENT_SPEND"
+    threshold_percent = 0.5
+    spend_basis       = "FORECASTED_SPEND"
   }
   budget_filter {
     projects = ["projects/${google_project.administrator_project.number}"]
-
   }
 }
 
@@ -523,7 +497,6 @@ data "google_iam_policy" "management" {
 
     members = [
       "serviceAccount:${google_service_account.administrator.email}",
-      "serviceAccount:${var.builder_account}"
     ]
   }
 
@@ -572,7 +545,6 @@ data "google_iam_policy" "ownership" {
     role = "roles/owner"
 
     members = [
-      "group:${var.organization_administrators_group}@${var.organization}",
       "serviceAccount:${var.builder_account}"
     ]
   }
@@ -646,8 +618,7 @@ data "google_iam_policy" "storage_management" {
     role = "roles/storage.admin"
 
     members = [
-      "group:${var.organization_administrators_group}@${var.organization}",
-      "serviceAccount:${var.builder_account}"
+      "serviceAccount:${google_service_account.administrator.email}",
     ]
   }
 
@@ -736,7 +707,7 @@ data "google_iam_policy" "kms_key_usage" {
     role = "roles/cloudkms.admin"
 
     members = [
-      "serviceAccount:${var.builder_account}",
+      "serviceAccount:${google_service_account.administrator.email}",
     ]
   }
 }
