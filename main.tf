@@ -510,16 +510,19 @@ resource "google_folder_iam_member" "folder_project_creator" {
 }
 
 resource "google_folder_iam_member" "folder_admin_viewer" {
+  folder = google_folder.workspace_folder.name
   role   = "roles/viewer"
   member = "group:${google_cloud_identity_group.administrators_group.group_key[0].id}"
 }
 
 resource "google_folder_iam_member" "folder_policy_viewer" {
+  folder = google_folder.workspace_folder.name
   role   = "roles/viewer"
   member = "group:${google_cloud_identity_group.policy_administrators_group.group_key[0].id}"
 }
 
 resource "google_folder_iam_member" "folder_finops_viewer" {
+  folder = google_folder.workspace_folder.name
   role   = "roles/viewer"
   member = "group:${google_cloud_identity_group.finops_group.group_key[0].id}"
 }
