@@ -491,45 +491,37 @@ resource "google_project_iam_custom_role" "image_manager_role" {
   permissions = local.image_manager_permissions
 }
 
-data "google_iam_policy" "management" {
-  binding {
-    role = "roles/resourcemanager.folderAdmin"
-
-    members = [
-      "serviceAccount:${google_service_account.administrator.email}",
-    ]
-  }
-
-  binding {
-    role = "roles/resourcemanager.folderIamAdmin"
-
-    members = [
-      "serviceAccount:${var.builder_account}",
-    ]
-  }
-
-  binding {
-    role = "roles/resourcemanager.projectCreator"
-
-    members = [
-      "serviceAccount:${google_service_account.administrator.email}",
-    ]
-  }
-
-  binding {
-    role = "roles/viewer"
-
-    members = [
-      "group:${google_cloud_identity_group.administrators_group.group_key[0].id}",
-      "group:${google_cloud_identity_group.policy_administrators_group.group_key[0].id}",
-      "group:${google_cloud_identity_group.finops_group.group_key[0].id}"
-    ]
-  }
+resource "google_folder_iam_member" "folder_admin" {
+  folder = google_folder.workspace_folder.name
+  role   = "roles/resourcemanager.folderAdmin"
+  member = "serviceAccount:${google_service_account.administrator.email}"
 }
 
-resource "google_folder_iam_policy" "folder_policy" {
-  folder      = google_folder.workspace_folder.name
-  policy_data = data.google_iam_policy.management.policy_data
+resource "google_folder_iam_member" "folder_iam_admin" {
+  folder = google_folder.workspace_folder.name
+  role   = "roles/resourcemanager.folderIamAdmin"
+  member = "serviceAccount:${var.builder_account}"
+}
+
+resource "google_folder_iam_member" "folder_project_creator" {
+  folder = google_folder.workspace_folder.name
+  role   = "roles/resourcemanager.projectCreator"
+  member = "serviceAccount:${google_service_account.administrator.email}"
+}
+
+resource "google_folder_iam_member" "folder_admin_viewer" {
+  role   = "roles/viewer"
+  member = "group:${google_cloud_identity_group.administrators_group.group_key[0].id}"
+}
+
+resource "google_folder_iam_member" "folder_policy_viewer" {
+  role   = "roles/viewer"
+  member = "group:${google_cloud_identity_group.policy_administrators_group.group_key[0].id}"
+}
+
+resource "google_folder_iam_member" "folder_finops_viewer" {
+  role   = "roles/viewer"
+  member = "group:${google_cloud_identity_group.finops_group.group_key[0].id}"
 }
 
 data "google_iam_policy" "ownership" {
