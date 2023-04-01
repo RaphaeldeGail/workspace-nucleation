@@ -10,7 +10,7 @@ output "workspace_bucket_name" {
   sensitive   = false
 }
 
-value "dns_registrar_setup" {
+output "dns_registrar_setup" {
   value = {
     name_servers = data.google_dns_managed_zone.workspace_dns_zone.name_servers
     ds_record    = data.google_dns_keys.workspace_dns_keys.key_signing_keys[0].ds_record

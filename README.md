@@ -202,5 +202,6 @@ No modules.
 | Name | Description |
 |------|-------------|
 | administrator\_project\_id | The ID of the administrator project. |
+| dns\_registrar\_setup | The DNS records to add to the registrar of the domain to setup the DNS subnzone, with DNSsec on. |
 | workspace\_bucket\_name | The name of the administrator bucket. |
 <!-- END_TF_DOCS -->
