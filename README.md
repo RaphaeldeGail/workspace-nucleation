@@ -122,7 +122,8 @@ Once you are authenticated with terraform cloud, you can run the script:
 
 The workspace structure is then created.
 
-TODO: IAM, all roles from builder account or org admins should come from inherited roles.
+TODO: Resume doc
+TODO: The workspace should not have a version.
 
 ***
 

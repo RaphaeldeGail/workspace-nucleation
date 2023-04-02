@@ -122,7 +122,8 @@
  *
  * The workspace structure is then created.
  *
- * TODO: IAM, all roles from builder account or org admins should come from inherited roles.
+ * TODO: Resume doc
+ * TODO: The workspace should not have a version.
  *
  * ***
  */
@@ -183,7 +184,7 @@ resource "google_project" "administrator_project" {
   /**
    * Master project of the workspace.
    */
-  name            = "${local.name} Administration"
+  name            = "${local.name} Admin Project"
   project_id      = "${local.name}-administration"
   org_id          = data.google_organization.organization.org_id
   billing_account = var.billing_account
@@ -195,8 +196,8 @@ resource "google_project" "administrator_project" {
   lifecycle {
     # The workspace full name must be of the form /^[a-z][a-z0-9]{1,9}[a-z]-v[0-9]{2}$/.
     precondition {
-      condition     = can(regex("^[a-z][a-z0-9]{1,9}[a-z]-v[0-9]{2}$", local.name))
-      error_message = "The name of the workspace should be of the form [a-z][a-z0-9]{1,9}[a-z]-v[0-9]{2}."
+      condition     = can(regex("^[a-z][a-z0-9]{1,12}[a-z]$", local.name))
+      error_message = "The name of the workspace should be of the form [a-z][a-z0-9]{1,12}[a-z]."
     }
   }
 }

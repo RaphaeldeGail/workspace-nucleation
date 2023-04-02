@@ -73,5 +73,5 @@ locals {
   index_length = 16
   name         = trimsuffix(terraform.workspace, "-workspace")
 
-  labels = { workspace = lower(regex("^[a-z][a-z0-9]{1,9}[a-z]", local.name)), version = tostring(regex("[0-9]{2}$", local.name)) }
+  labels = { workspace = tostring(local.name) }
 }
