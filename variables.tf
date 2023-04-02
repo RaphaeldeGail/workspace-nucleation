@@ -22,13 +22,6 @@ variable "region" {
   nullable    = false
 }
 
-variable "builder_account" {
-  type        = string
-  description = "The e-mail of the service account used to build the workspace."
-  nullable    = false
-  sensitive   = true
-}
-
 variable "team" {
   type = object({
     administrators        = list(string)

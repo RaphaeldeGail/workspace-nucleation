@@ -122,6 +122,8 @@
  *
  * The workspace structure is then created.
  *
+ * TODO: IAM, all roles from builder account or org admins should come from inherited roles.
+ *
  * ***
  */
 
@@ -497,12 +499,6 @@ resource "google_folder_iam_member" "folder_admin" {
   member = "serviceAccount:${google_service_account.administrator.email}"
 }
 
-resource "google_folder_iam_member" "folder_iam_admin" {
-  folder = google_folder.workspace_folder.name
-  role   = "roles/resourcemanager.folderIamAdmin"
-  member = "serviceAccount:${var.builder_account}"
-}
-
 resource "google_folder_iam_member" "folder_project_creator" {
   folder = google_folder.workspace_folder.name
   role   = "roles/resourcemanager.projectCreator"
@@ -530,28 +526,16 @@ resource "google_folder_iam_member" "folder_finops_viewer" {
 data "google_iam_policy" "ownership" {
   binding {
     role = "roles/compute.serviceAgent"
-
     members = [
       "serviceAccount:service-${google_project.administrator_project.number}@compute-system.iam.gserviceaccount.com",
     ]
   }
-
   binding {
     role = "roles/editor"
-
     members = [
       "serviceAccount:${google_project.administrator_project.number}@cloudservices.gserviceaccount.com"
     ]
   }
-
-  binding {
-    role = "roles/owner"
-
-    members = [
-      "serviceAccount:${var.builder_account}"
-    ]
-  }
-
   binding {
     role = google_project_iam_custom_role.image_manager_role.id
 
@@ -559,10 +543,8 @@ data "google_iam_policy" "ownership" {
       "serviceAccount:${google_service_account.administrator.email}",
     ]
   }
-
   binding {
     role = "roles/viewer"
-
     members = [
       "group:${google_cloud_identity_group.administrators_group.group_key[0].id}",
       "group:${google_cloud_identity_group.policy_administrators_group.group_key[0].id}",
@@ -580,7 +562,6 @@ resource "google_project_iam_policy" "project_policy" {
 data "google_iam_policy" "administrators_impersonation" {
   binding {
     role = "roles/iam.serviceAccountTokenCreator"
-
     members = [
       "group:${google_cloud_identity_group.administrators_group.group_key[0].id}",
     ]
@@ -595,7 +576,6 @@ resource "google_service_account_iam_policy" "administrator_service_account_poli
 data "google_iam_policy" "policy_administrators_impersonation" {
   binding {
     role = "roles/iam.serviceAccountTokenCreator"
-
     members = [
       "group:${google_cloud_identity_group.policy_administrators_group.group_key[0].id}",
     ]
@@ -610,25 +590,19 @@ resource "google_service_account_iam_policy" "policy_administrator_service_accou
 data "google_iam_policy" "storage_management" {
   binding {
     role = "roles/storage.objectAdmin"
-
     members = [
       "serviceAccount:${google_service_account.administrator.email}",
       "serviceAccount:${google_service_account.policy_administrator.email}",
     ]
   }
-
   binding {
     role = "roles/storage.admin"
-
     members = [
-      "serviceAccount:${var.builder_account}",
       "serviceAccount:${google_service_account.administrator.email}",
     ]
   }
-
   binding {
     role = "roles/storage.objectViewer"
-
     members = [
       "group:${google_cloud_identity_group.administrators_group.group_key[0].id}",
       "group:${google_cloud_identity_group.policy_administrators_group.group_key[0].id}",
@@ -645,24 +619,19 @@ resource "google_storage_bucket_iam_policy" "bucket_policy" {
 data "google_iam_policy" "billing_management" {
   binding {
     role = "roles/billing.admin"
-
     members = [
       "group:${google_cloud_identity_group.finops_group.group_key[0].id}"
     ]
   }
-
   binding {
     role = "roles/billing.viewer"
-
     members = [
       "serviceAccount:${google_service_account.administrator.email}",
       "group:${google_cloud_identity_group.administrators_group.group_key[0].id}",
     ]
   }
-
   binding {
     role = "roles/billing.user"
-
     members = [
       "serviceAccount:${google_service_account.administrator.email}"
     ]
@@ -677,16 +646,13 @@ resource "google_billing_account_iam_policy" "billing_account_policy" {
 data "google_iam_policy" "tags_usage" {
   binding {
     role = "roles/resourcemanager.tagViewer"
-
     members = [
       "group:${google_cloud_identity_group.policy_administrators_group.group_key[0].id}",
       "serviceAccount:${google_service_account.policy_administrator.email}"
     ]
   }
-
   binding {
     role = "roles/resourcemanager.tagUser"
-
     members = [
       "serviceAccount:${google_service_account.policy_administrator.email}",
     ]
@@ -701,15 +667,12 @@ resource "google_tags_tag_value_iam_policy" "tags_policy" {
 data "google_iam_policy" "kms_key_usage" {
   binding {
     role = "roles/cloudkms.cryptoKeyEncrypterDecrypter"
-
     members = [
       "serviceAccount:service-${google_project.administrator_project.number}@gs-project-accounts.iam.gserviceaccount.com",
     ]
   }
-
   binding {
     role = "roles/cloudkms.admin"
-
     members = [
       "serviceAccount:${google_service_account.administrator.email}",
     ]

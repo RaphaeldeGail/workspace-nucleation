@@ -122,6 +122,8 @@ Once you are authenticated with terraform cloud, you can run the script:
 
 The workspace structure is then created.
 
+TODO: IAM, all roles from builder account or org admins should come from inherited roles.
+
 ***
 
 ## Requirements
@@ -154,7 +156,6 @@ No modules.
 | [google_folder_iam_member.folder_admin](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/folder_iam_member) | resource |
 | [google_folder_iam_member.folder_admin_viewer](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/folder_iam_member) | resource |
 | [google_folder_iam_member.folder_finops_viewer](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/folder_iam_member) | resource |
-| [google_folder_iam_member.folder_iam_admin](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/folder_iam_member) | resource |
 | [google_folder_iam_member.folder_policy_viewer](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/folder_iam_member) | resource |
 | [google_folder_iam_member.folder_project_creator](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/folder_iam_member) | resource |
 | [google_kms_crypto_key.symmetric_key](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/kms_crypto_key) | resource |
@@ -195,7 +196,6 @@ No modules.
 |------|-------------|------|---------|
 | billing\_account | The ID of the billing account used for the workspace. | `string` | n/a |
 | budget\_allowed | The monthly amount allowed for the workspace. Must be an integer. | `number` | n/a |
-| builder\_account | The e-mail of the service account used to build the workspace. | `string` | n/a |
 | organization | Name of the organization hosting the workspace. | `string` | n/a |
 | project | The ID of the root project for the organization. Used to create workspaces. | `string` | n/a |
 | region | Geographical *region* for Google Cloud Platform. | `string` | n/a |
