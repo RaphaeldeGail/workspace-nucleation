@@ -238,6 +238,11 @@ resource "google_storage_bucket" "administrator_bucket" {
   }
 
   labels = merge(local.labels, { uid = random_string.workspace_uid.result })
+
+  # The bucket can not be created if the KMS key is not usable by the Cloud Storage service agent.
+  depends_on = [
+    google_kms_crypto_key_iam_policy.kms_key_policy
+  ]
 }
 
 resource "google_tags_location_tag_binding" "bucket_tag_binding" {
@@ -665,11 +670,15 @@ resource "google_tags_tag_value_iam_policy" "tags_policy" {
   policy_data = data.google_iam_policy.tags_usage.policy_data
 }
 
+data "google_storage_project_service_account" "gcs_account" {
+  project = google_project.administrator_project.project_id
+}
+
 data "google_iam_policy" "kms_key_usage" {
   binding {
     role = "roles/cloudkms.cryptoKeyEncrypterDecrypter"
     members = [
-      "serviceAccount:service-${google_project.administrator_project.number}@gs-project-accounts.iam.gserviceaccount.com",
+      "serviceAccount:${data.google_storage_project_service_account.gcs_account.email_address}",
     ]
   }
   binding {
