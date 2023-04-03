@@ -123,7 +123,7 @@
  * The workspace structure is then created.
  *
  * TODO: Resume doc
- * TODO: The workspace should not have a version.
+ * TODO: Add lifecycle dependencies for DNS and KMS
  *
  * ***
  */
@@ -337,6 +337,10 @@ resource "google_dns_managed_zone" "workspace_dns_zone" {
       kind       = "dns#dnsKeySpec"
     }
   }
+
+  depends_on = [
+    google_project_service.administrator_api["dns.googleapis.com"]
+  ]
 }
 
 data "google_dns_keys" "workspace_dns_keys" {
