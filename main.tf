@@ -238,10 +238,6 @@ resource "google_storage_bucket" "administrator_bucket" {
   }
 
   labels = merge(local.labels, { uid = random_string.workspace_uid.result })
-
-  depends_on = [
-    google_kms_crypto_key_iam_policy.kms_key_policy
-  ]
 }
 
 resource "google_tags_location_tag_binding" "bucket_tag_binding" {

@@ -123,7 +123,7 @@ Once you are authenticated with terraform cloud, you can run the script:
 The workspace structure is then created.
 
 TODO: Resume doc
-TODO: The workspace should not have a version.
+TODO: Add lifecycle dependencies for DNS and KMS
 
 ***
 
