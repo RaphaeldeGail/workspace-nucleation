@@ -93,37 +93,136 @@ Only an organization administrator can delete a workspace.
 
 ## Repository presentation
 
-We discuss here on the repository structure itself.
-
-TODO: HERE
-
 ### Repository structure
 
-*What is in this repo?*
+The reposiotry contains the terraform script to generate a workspace belonging to a Google Cloud Organization.
+The terraform files organizes in a regular fashion with *main.tf*, *variables.tf* and *outputs.tf*.
+
+Along with the standard terraform files is the terraform-docs configuration file, used to generate this README.
+Last, the *docs* repository stores every diagrams needed for the documentation.
 
 ### Repository usage
 
-*How do I use this repo to create a workspace?*
+In order to create a workspace with the terraform script, you will need the following:
 
-- Terraform Cloud config (organization, workspace, variables)
-- Terraform client config
-- Google Cloud Organization
-- Root project (Root setup)
-- builder account with permissions
-- secretary account
+1. an access to a Google Cloud Organization
+1. Root project (Root setup)
+1. an access to a Google Cloud service account with the following rights:
+1. Terraform client config (no configuration is provided here for terraform backend, etc.)
+1. builder account with permissions:
+   - billing.accounts.get
+   - billing.accounts.getIamPolicy
+   - billing.accounts.list
+   - billing.accounts.setIamPolicy
+   - billing.resourceAssociations.create
+   - billing.resourceAssociations.delete
+   - billing.resourceAssociations.list
+   - cloudkms.cryptoKeys.create
+   - cloudkms.cryptoKeys.get
+   - cloudkms.cryptoKeys.getIamPolicy
+   - cloudkms.cryptoKeys.list
+   - cloudkms.cryptoKeys.setIamPolicy
+   - cloudkms.cryptoKeys.update
+   - cloudkms.keyRings.create
+   - cloudkms.keyRings.createTagBinding
+   - cloudkms.keyRings.deleteTagBinding
+   - cloudkms.keyRings.get
+   - cloudkms.keyRings.getIamPolicy
+   - cloudkms.keyRings.list
+   - cloudkms.keyRings.listEffectiveTags
+   - cloudkms.keyRings.listTagBindings
+   - cloudkms.keyRings.setIamPolicy
+   - cloudkms.locations.generateRandomBytes
+   - cloudkms.locations.get
+   - dns.dnsKeys.get
+   - dns.dnsKeys.list
+   - dns.managedZoneOperations.get
+   - dns.managedZoneOperations.list
+   - dns.managedZones.create
+   - dns.managedZones.delete
+   - dns.managedZones.get
+   - dns.managedZones.getIamPolicy
+   - dns.managedZones.list
+   - dns.managedZones.setIamPolicy
+   - dns.managedZones.update
+   - iam.serviceAccounts.create
+   - iam.serviceAccounts.delete
+   - iam.serviceAccounts.get
+   - iam.serviceAccounts.getIamPolicy
+   - iam.serviceAccounts.list
+   - iam.serviceAccounts.setIamPolicy
+   - iam.serviceAccounts.undelete
+   - iam.serviceAccounts.update
+   - orgpolicy.constraints.list
+   - orgpolicy.policies.list
+   - orgpolicy.policy.get
+   - resourcemanager.folders.create
+   - resourcemanager.folders.get
+   - resourcemanager.folders.getIamPolicy
+   - resourcemanager.folders.list
+   - resourcemanager.folders.setIamPolicy
+   - resourcemanager.hierarchyNodes.createTagBinding
+   - resourcemanager.hierarchyNodes.deleteTagBinding
+   - resourcemanager.hierarchyNodes.listEffectiveTags
+   - resourcemanager.hierarchyNodes.listTagBindings
+   - resourcemanager.organizations.get
+   - resourcemanager.projects.create
+   - resourcemanager.projects.createBillingAssignment
+   - resourcemanager.projects.deleteBillingAssignment
+   - resourcemanager.projects.get
+   - resourcemanager.projects.getIamPolicy
+   - resourcemanager.projects.list
+   - resourcemanager.projects.setIamPolicy
+   - resourcemanager.projects.update
+   - resourcemanager.tagHolds.create
+   - resourcemanager.tagHolds.delete
+   - resourcemanager.tagHolds.list
+   - resourcemanager.tagKeys.get
+   - resourcemanager.tagKeys.getIamPolicy
+   - resourcemanager.tagKeys.list
+   - resourcemanager.tagValueBindings.create
+   - resourcemanager.tagValueBindings.delete
+   - resourcemanager.tagValues.create
+   - resourcemanager.tagValues.delete
+   - resourcemanager.tagValues.get
+   - resourcemanager.tagValues.getIamPolicy
+   - resourcemanager.tagValues.list
+   - resourcemanager.tagValues.setIamPolicy
+   - resourcemanager.tagValues.update
+   - storage.buckets.create
+   - storage.buckets.createTagBinding
+   - storage.buckets.deleteTagBinding
+   - storage.buckets.get
+   - storage.buckets.getIamPolicy
+   - storage.buckets.list
+   - storage.buckets.listEffectiveTags
+   - storage.buckets.listTagBindings
+   - storage.buckets.setIamPolicy
+   - storage.buckets.update
 
 Before running this code, you should first create a Google Cloud Platform **organization** (see official documentation).
 
-Once you are authenticated with terraform cloud, you can run the script:
+Once you are authenticated with terraform cloud, you can run the command:
 
 ```bash
-./run.sh
+terraform apply
 ```
 
 The workspace structure is then created.
 
-TODO: Resume doc
-TODO: Add lifecycle dependencies for DNS and KMS
+### Documentation generation
+
+You will have to install the terraform-docs utility from [https://terraform-docs.io/](https://terraform-docs.io/)
+Then use the following command:
+
+```bash
+terraform-docs .
+```
+
+in the root of the repository.
+The *.terraform-docs.yml* files points to a specific version of terraform-docs but you may change it as needed.
+
+TODO: work the uninstall script.
 
 ***
 
