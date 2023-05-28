@@ -31,6 +31,11 @@ data "google_organization" "organization" {
   domain = var.organization
 }
 
+data "google_active_folder" "workspaces_folder" {
+  display_name = "Workspaces"
+  parent       = data.google_organization.organization.name
+}
+
 data "google_tags_tag_key" "workspace_tag_key" {
   parent     = data.google_organization.organization.name
   short_name = "workspace"
@@ -63,7 +68,8 @@ resource "google_project" "administrator_project" {
    */
   name            = "${local.name} Admin Project"
   project_id      = "${local.name}-administration"
-  org_id          = data.google_organization.organization.org_id
+  #org_id          = data.google_organization.organization.org_id
+  folder_id       = data.google_active_folder.workspaces_folder.name
   billing_account = var.billing_account
   labels          = merge(local.labels, { uid = random_string.workspace_uid.result })
 
@@ -144,7 +150,7 @@ resource "google_service_account" "policy_administrator" {
 
 resource "google_folder" "workspace_folder" {
   display_name = "${local.name} Workspace"
-  parent       = data.google_organization.organization.name
+  parent       = data.google_active_folder.workspaces_folder.name
 }
 
 resource "google_tags_tag_binding" "workspace_folder_tag_binding" {

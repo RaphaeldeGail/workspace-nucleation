@@ -94,6 +94,8 @@ Only an organization administrator can delete a workspace.
 
 ### Repository structure
 
+TODO: update repository structure
+
 The reposiotry contains the terraform script to generate a workspace belonging to a Google Cloud Organization.
 The terraform files organizes in a regular fashion with *main.tf*, *variables.tf* and *outputs.tf*.
 
