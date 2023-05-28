@@ -160,7 +160,7 @@ resource "google_kms_key_ring" "workspace_keyring" {
   location = var.region
 
   lifecycle {
-    prevent_destroy = true
+    prevent_destroy = false
   }
 
   depends_on = [
@@ -182,7 +182,7 @@ resource "google_kms_crypto_key" "symmetric_key" {
   }
 
   lifecycle {
-    prevent_destroy = true
+    prevent_destroy = false
   }
 }
 
