@@ -31,10 +31,10 @@ provider "random" {
 #   domain = var.organization
 # }
 
-data "google_tags_tag_key" "workspace_tag_key" {
-  parent     = "organizations/${var.organization}"
-  short_name = "workspace"
-}
+# data "google_tags_tag_key" "workspace_tag_key" {
+#   parent     = "organizations/${var.organization}"
+#   short_name = "workspace"
+# }
 
 resource "random_string" "workspace_uid" {
   /** 
@@ -52,7 +52,7 @@ resource "random_string" "workspace_uid" {
 }
 
 resource "google_tags_tag_value" "workspace_tag_value" {
-  parent      = data.google_tags_tag_key.workspace_tag_key.id
+  parent      = "tagKeys/269336281057"
   short_name  = local.name
   description = "For resources under ${local.name} workspace."
 }
