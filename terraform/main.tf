@@ -33,11 +33,11 @@ provider "random" {
 
 data "google_active_folder" "workspaces_folder" {
   display_name = "Workspaces"
-  parent       = var.organization
+  parent       = "organizations/${var.organization}"
 }
 
 data "google_tags_tag_key" "workspace_tag_key" {
-  parent     = var.organization
+  parent     = "organizations/${var.organization}"
   short_name = "workspace"
 }
 
