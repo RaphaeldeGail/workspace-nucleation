@@ -27,17 +27,17 @@ provider "google" {
 provider "random" {
 }
 
-data "google_organization" "organization" {
-  domain = var.organization
-}
+# data "google_organization" "organization" {
+#   domain = var.organization
+# }
 
 data "google_active_folder" "workspaces_folder" {
   display_name = "Workspaces"
-  parent       = data.google_organization.organization.name
+  parent       = var.organization
 }
 
 data "google_tags_tag_key" "workspace_tag_key" {
-  parent     = data.google_organization.organization.name
+  parent     = var.organization
   short_name = "workspace"
 }
 
@@ -266,7 +266,7 @@ resource "google_cloud_identity_group" "finops_group" {
   description          = "Financial operators of the ${local.name} workspace."
   initial_group_config = "WITH_INITIAL_OWNER"
 
-  parent = "customers/${data.google_organization.organization.directory_customer_id}"
+  parent = "customers/C03krtmmy"
 
   group_key {
     id = "${local.name}-finops@${var.organization}"
@@ -286,7 +286,7 @@ resource "google_cloud_identity_group" "administrators_group" {
   description          = "Administrators of the ${local.name} workspace."
   initial_group_config = "WITH_INITIAL_OWNER"
 
-  parent = "customers/${data.google_organization.organization.directory_customer_id}"
+  parent = "customers/C03krtmmy"
 
   group_key {
     id = "${local.name}-administrators@${var.organization}"
@@ -306,7 +306,7 @@ resource "google_cloud_identity_group" "policy_administrators_group" {
   description          = "Policy Administrators of the ${local.name} workspace."
   initial_group_config = "WITH_INITIAL_OWNER"
 
-  parent = "customers/${data.google_organization.organization.directory_customer_id}"
+  parent = "customers/C03krtmmy"
 
   group_key {
     id = "${local.name}-policy-administrators@${var.organization}"
