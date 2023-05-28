@@ -264,7 +264,7 @@ resource "google_cloud_identity_group" "finops_group" {
   parent = "customers/C03krtmmy"
 
   group_key {
-    id = "${local.name}-finops@${var.organization}"
+    id = "${local.name}-finops@wansho.fr"
   }
 
   labels = {
@@ -284,7 +284,7 @@ resource "google_cloud_identity_group" "administrators_group" {
   parent = "customers/C03krtmmy"
 
   group_key {
-    id = "${local.name}-administrators@${var.organization}"
+    id = "${local.name}-administrators@wansho.fr"
   }
 
   labels = {
@@ -304,7 +304,7 @@ resource "google_cloud_identity_group" "policy_administrators_group" {
   parent = "customers/C03krtmmy"
 
   group_key {
-    id = "${local.name}-policy-administrators@${var.organization}"
+    id = "${local.name}-policy-administrators@wansho.fr"
   }
 
   labels = {
