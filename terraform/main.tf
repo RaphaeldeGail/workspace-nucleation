@@ -3,6 +3,9 @@
  * 
  * This module sets up a new **workspace** in a *Google Cloud Organization*.
  *
+ * TODO: fail upon re-creation of Admin project (same ID)
+ * TODO: remove static values in objects (tagKeys, folderId, organizationDomain, customersDirectory)
+ *
  */
 
 terraform {
@@ -62,7 +65,7 @@ resource "google_project" "administrator_project" {
    * Master project of the workspace.
    */
   name            = "${local.name} Admin Project"
-  project_id      = "${local.name}-administration"
+  project_id      = "${local.name}-administration-${random_string.workspace_uid.result}"
   #org_id          = data.google_organization.organization.org_id
   folder_id       = "578502317468"
   billing_account = var.billing_account
