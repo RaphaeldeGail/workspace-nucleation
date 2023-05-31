@@ -65,7 +65,7 @@ resource "google_project" "administrator_project" {
    * Master project of the workspace.
    */
   name            = "${local.name} Admin Project"
-  project_id      = "${local.name}-administration-${random_string.workspace_uid.result}"
+  project_id      = substr("${local.name}-adm-${random_string.workspace_uid.result}", 0, 30)
   #org_id          = data.google_organization.organization.org_id
   folder_id       = "578502317468"
   billing_account = var.billing_account
