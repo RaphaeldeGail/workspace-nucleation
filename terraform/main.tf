@@ -3,9 +3,6 @@
  * 
  * This module sets up a new **workspace** in a *Google Cloud Organization*.
  *
- * TODO: fail upon re-creation of Admin project (same ID)
- * TODO: remove static values in objects (tagKeys, folderId, organizationDomain, customersDirectory)
- *
  */
 
 terraform {
@@ -30,14 +27,6 @@ provider "google" {
 provider "random" {
 }
 
-# data "google_organization" "organization" {
-#   domain = var.organization
-# }
-
-# data "google_tags_tag_key" "workspace_tag_key" {
-#   parent     = "organizations/${var.organization}"
-#   short_name = "workspace"
-# }
 
 resource "random_string" "workspace_uid" {
   /** 
@@ -55,7 +44,7 @@ resource "random_string" "workspace_uid" {
 }
 
 resource "google_tags_tag_value" "workspace_tag_value" {
-  parent      = "tagKeys/269336281057"
+  parent      = var.workspaces_tag_key
   short_name  = local.name
   description = "For resources under ${local.name} workspace."
 }
@@ -66,8 +55,7 @@ resource "google_project" "administrator_project" {
    */
   name            = "${local.name} Admin Project"
   project_id      = substr("${local.name}-adm-${random_string.workspace_uid.result}", 0, 30)
-  #org_id          = data.google_organization.organization.org_id
-  folder_id       = "578502317468"
+  folder_id       = var.workspaces_folder
   billing_account = var.billing_account
   labels          = merge(local.labels, { uid = random_string.workspace_uid.result })
 
@@ -148,7 +136,7 @@ resource "google_service_account" "policy_administrator" {
 
 resource "google_folder" "workspace_folder" {
   display_name = "${local.name} Workspace"
-  parent       = "folders/578502317468"
+  parent       = "folders/${var.workspaces_folder}"
 }
 
 resource "google_tags_tag_binding" "workspace_folder_tag_binding" {
@@ -264,10 +252,10 @@ resource "google_cloud_identity_group" "finops_group" {
   description          = "Financial operators of the ${local.name} workspace."
   initial_group_config = "WITH_INITIAL_OWNER"
 
-  parent = "customers/C03krtmmy"
+  parent = "customers/${var.customer_directory}"
 
   group_key {
-    id = "${local.name}-finops@wansho.fr"
+    id = "${local.name}-finops@${var.organization}"
   }
 
   labels = {
@@ -284,10 +272,10 @@ resource "google_cloud_identity_group" "administrators_group" {
   description          = "Administrators of the ${local.name} workspace."
   initial_group_config = "WITH_INITIAL_OWNER"
 
-  parent = "customers/C03krtmmy"
+  parent = "customers/${var.customer_directory}"
 
   group_key {
-    id = "${local.name}-administrators@wansho.fr"
+    id = "${local.name}-administrators@${var.organization}"
   }
 
   labels = {
@@ -304,10 +292,10 @@ resource "google_cloud_identity_group" "policy_administrators_group" {
   description          = "Policy Administrators of the ${local.name} workspace."
   initial_group_config = "WITH_INITIAL_OWNER"
 
-  parent = "customers/C03krtmmy"
+  parent = "customers/${var.customer_directory}"
 
   group_key {
-    id = "${local.name}-policy-administrators@wansho.fr"
+    id = "${local.name}-policy-administrators@${var.organization}"
   }
 
   labels = {

@@ -12,13 +12,31 @@ variable "billing_account" {
 
 variable "organization" {
   type        = string
-  description = "Name of the organization hosting the workspace."
+  description = "Name, or domain, of the organization hosting the workspace."
+  nullable    = false
+}
+
+variable "workspaces_folder" {
+  type        = string
+  description = "The ID of the \"Workspaces\" folder that contains all subsequent workspaces."
+  nullable    = false
+}
+
+variable "workspaces_tag_key" {
+  type        = string
+  description = "The ID of \"workspace\" tag key."
   nullable    = false
 }
 
 variable "region" {
   type        = string
   description = "Geographical *region* for Google Cloud Platform."
+  nullable    = false
+}
+
+variable "customer_directory" {
+  type        = string
+  description = "The ID of the Google Cloud Identity directory."
   nullable    = false
 }
 

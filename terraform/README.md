@@ -64,9 +64,7 @@ No modules.
 | [google_iam_policy.policy_administrators_impersonation](https://registry.terraform.io/providers/hashicorp/google/latest/docs/data-sources/iam_policy) | data source |
 | [google_iam_policy.storage_management](https://registry.terraform.io/providers/hashicorp/google/latest/docs/data-sources/iam_policy) | data source |
 | [google_iam_policy.tags_usage](https://registry.terraform.io/providers/hashicorp/google/latest/docs/data-sources/iam_policy) | data source |
-| [google_organization.organization](https://registry.terraform.io/providers/hashicorp/google/latest/docs/data-sources/organization) | data source |
 | [google_storage_project_service_account.gcs_account](https://registry.terraform.io/providers/hashicorp/google/latest/docs/data-sources/storage_project_service_account) | data source |
-| [google_tags_tag_key.workspace_tag_key](https://registry.terraform.io/providers/hashicorp/google/latest/docs/data-sources/tags_tag_key) | data source |
 
 ## Inputs
 
@@ -74,10 +72,13 @@ No modules.
 |------|-------------|------|---------|
 | billing\_account | The ID of the billing account used for the workspace. | `string` | n/a |
 | budget\_allowed | The monthly amount allowed for the workspace. Must be an integer. | `number` | n/a |
-| organization | Name of the organization hosting the workspace. | `string` | n/a |
+| customer\_directory | The ID of the Google Cloud Identity directory. | `string` | n/a |
+| organization | Name, or domain, of the organization hosting the workspace. | `string` | n/a |
 | project | The ID of the root project for the organization. Used to create workspaces. | `string` | n/a |
 | region | Geographical *region* for Google Cloud Platform. | `string` | n/a |
 | team | List of team members by roles, *administrator*, *policy\_administrator* and *finops*. | ```object({ administrators = list(string) policy_administrators = list(string) finops = list(string) })``` | n/a |
+| workspaces\_folder | The ID of the "Workspaces" folder that contains all subsequent workspaces. | `string` | n/a |
+| workspaces\_tag\_key | The ID of "workspace" tag key. | `string` | n/a |
 
 ## Outputs
 
