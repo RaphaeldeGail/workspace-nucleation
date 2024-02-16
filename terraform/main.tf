@@ -244,118 +244,6 @@ resource "google_billing_budget" "workspace_budget" {
 }
 
 /**
- * Google Groups
- */
-
-resource "google_cloud_identity_group" "finops_group" {
-  display_name         = "${local.name} FinOps"
-  description          = "Financial operators of the ${local.name} workspace."
-  initial_group_config = "WITH_INITIAL_OWNER"
-
-  parent = "customers/${var.customer_directory}"
-
-  group_key {
-    id = "${local.name}-finops@${var.organization}"
-  }
-
-  labels = {
-    "cloudidentity.googleapis.com/groups.discussion_forum" = ""
-  }
-
-  depends_on = [
-    google_project_service.administrator_api["cloudidentity.googleapis.com"]
-  ]
-}
-
-resource "google_cloud_identity_group" "administrators_group" {
-  display_name         = "${local.name} Administrators"
-  description          = "Administrators of the ${local.name} workspace."
-  initial_group_config = "WITH_INITIAL_OWNER"
-
-  parent = "customers/${var.customer_directory}"
-
-  group_key {
-    id = "${local.name}-administrators@${var.organization}"
-  }
-
-  labels = {
-    "cloudidentity.googleapis.com/groups.discussion_forum" = ""
-  }
-
-  depends_on = [
-    google_project_service.administrator_api["cloudidentity.googleapis.com"]
-  ]
-}
-
-resource "google_cloud_identity_group" "policy_administrators_group" {
-  display_name         = "${local.name} Policy Administrators"
-  description          = "Policy Administrators of the ${local.name} workspace."
-  initial_group_config = "WITH_INITIAL_OWNER"
-
-  parent = "customers/${var.customer_directory}"
-
-  group_key {
-    id = "${local.name}-policy-administrators@${var.organization}"
-  }
-
-  labels = {
-    "cloudidentity.googleapis.com/groups.discussion_forum" = ""
-  }
-
-  depends_on = [
-    google_project_service.administrator_api["cloudidentity.googleapis.com"]
-  ]
-}
-
-resource "google_cloud_identity_group_membership" "finops_group_manager" {
-  for_each = toset(var.team.finops)
-
-  group = google_cloud_identity_group.finops_group.id
-
-  preferred_member_key {
-    id = each.value
-  }
-  roles {
-    name = "MEMBER"
-  }
-  roles {
-    name = "OWNER"
-  }
-}
-
-resource "google_cloud_identity_group_membership" "administrators_group_manager" {
-  for_each = toset(var.team.administrators)
-
-  group = google_cloud_identity_group.administrators_group.id
-
-  preferred_member_key {
-    id = each.value
-  }
-  roles {
-    name = "MEMBER"
-  }
-  roles {
-    name = "OWNER"
-  }
-}
-
-resource "google_cloud_identity_group_membership" "policy_administrators_group_manager" {
-  for_each = toset(var.team.policy_administrators)
-
-  group = google_cloud_identity_group.policy_administrators_group.id
-
-  preferred_member_key {
-    id = each.value
-  }
-  roles {
-    name = "MEMBER"
-  }
-  roles {
-    name = "OWNER"
-  }
-}
-
-/**
  * Identity and Access Management
  */
 
@@ -383,19 +271,19 @@ resource "google_folder_iam_member" "folder_project_creator" {
 resource "google_folder_iam_member" "folder_admin_viewer" {
   folder = google_folder.workspace_folder.name
   role   = "roles/viewer"
-  member = "group:${google_cloud_identity_group.administrators_group.group_key[0].id}"
+  member = "group:${var.admin_group}"
 }
 
 resource "google_folder_iam_member" "folder_policy_viewer" {
   folder = google_folder.workspace_folder.name
   role   = "roles/viewer"
-  member = "group:${google_cloud_identity_group.policy_administrators_group.group_key[0].id}"
+  member = "group:${var.policy_group}"
 }
 
 resource "google_folder_iam_member" "folder_finops_viewer" {
   folder = google_folder.workspace_folder.name
   role   = "roles/viewer"
-  member = "group:${google_cloud_identity_group.finops_group.group_key[0].id}"
+  member = "group:${var.finops_group}"
 }
 
 data "google_iam_policy" "ownership" {
@@ -421,9 +309,9 @@ data "google_iam_policy" "ownership" {
   binding {
     role = "roles/viewer"
     members = [
-      "group:${google_cloud_identity_group.administrators_group.group_key[0].id}",
-      "group:${google_cloud_identity_group.policy_administrators_group.group_key[0].id}",
-      "group:${google_cloud_identity_group.finops_group.group_key[0].id}",
+      "group:${var.admin_group}",
+      "group:${var.policy_group}",
+      "group:${var.finops_group}",
       "serviceAccount:${google_service_account.administrator.email}",
     ]
   }
@@ -438,7 +326,7 @@ data "google_iam_policy" "administrators_impersonation" {
   binding {
     role = "roles/iam.serviceAccountTokenCreator"
     members = [
-      "group:${google_cloud_identity_group.administrators_group.group_key[0].id}",
+      "group:${var.admin_group}",
     ]
   }
 }
@@ -452,7 +340,7 @@ data "google_iam_policy" "policy_administrators_impersonation" {
   binding {
     role = "roles/iam.serviceAccountTokenCreator"
     members = [
-      "group:${google_cloud_identity_group.policy_administrators_group.group_key[0].id}",
+      "group:${var.policy_group}",
     ]
   }
 }
@@ -479,9 +367,9 @@ data "google_iam_policy" "storage_management" {
   binding {
     role = "roles/storage.objectViewer"
     members = [
-      "group:${google_cloud_identity_group.administrators_group.group_key[0].id}",
-      "group:${google_cloud_identity_group.policy_administrators_group.group_key[0].id}",
-      "group:${google_cloud_identity_group.finops_group.group_key[0].id}"
+      "group:${var.admin_group}",
+      "group:${var.policy_group}",
+      "group:${var.finops_group}"
     ]
   }
 }
@@ -495,14 +383,14 @@ data "google_iam_policy" "billing_management" {
   binding {
     role = "roles/billing.admin"
     members = [
-      "group:${google_cloud_identity_group.finops_group.group_key[0].id}"
+      "group:${var.finops_group}"
     ]
   }
   binding {
     role = "roles/billing.viewer"
     members = [
       "serviceAccount:${google_service_account.administrator.email}",
-      "group:${google_cloud_identity_group.administrators_group.group_key[0].id}",
+      "group:${var.admin_group}",
     ]
   }
   binding {
@@ -522,7 +410,7 @@ data "google_iam_policy" "tags_usage" {
   binding {
     role = "roles/resourcemanager.tagViewer"
     members = [
-      "group:${google_cloud_identity_group.policy_administrators_group.group_key[0].id}",
+      "group:${var.policy_group}",
       "serviceAccount:${google_service_account.policy_administrator.email}"
     ]
   }
@@ -578,7 +466,7 @@ data "google_iam_policy" "dns_management" {
   binding {
     role = "roles/dns.reader"
     members = [
-      "group:${google_cloud_identity_group.administrators_group.group_key[0].id}",
+      "group:${var.admin_group}",
     ]
   }
 }

@@ -40,15 +40,21 @@ variable "customer_directory" {
   nullable    = false
 }
 
-variable "team" {
-  type = object({
-    administrators        = list(string)
-    policy_administrators = list(string)
-    finops                = list(string)
-  })
-  description = "List of team members by roles, *administrator*, *policy_administrator* and *finops*."
-  nullable    = false
+variable "admin_group" {
+  type = string
+  description = "Email for administrators group."
 }
+
+variable "policy_group" {
+  type = string
+  description = "Email for policy administrators group."
+}
+
+variable "finops_group" {
+  type = string
+  description = "Email for finops group."
+}
+
 
 variable "budget_allowed" {
   type        = number
