@@ -401,25 +401,21 @@ data "google_iam_policy" "billing_management" {
   }
 }
 
-data "google_iam_policy" "tags_usage" {
-  binding {
-    role = "roles/resourcemanager.tagViewer"
-    members = [
-      "group:${var.policy_group}",
-      "serviceAccount:${google_service_account.policy_administrator.email}"
-    ]
-  }
-  binding {
-    role = "roles/resourcemanager.tagUser"
-    members = [
-      "serviceAccount:${google_service_account.policy_administrator.email}",
-    ]
-  }
+resource "google_tags_tag_value_iam_binding" "tag_viewer" {
+  tag_value = google_tags_tag_value.workspace_tag_value.id
+  role = "roles/resourcemanager.tagViewer"
+  members = [
+    "group:${var.policy_group}",
+    "serviceAccount:${google_service_account.policy_administrator.email}"
+  ]
 }
 
-resource "google_tags_tag_value_iam_policy" "tags_policy" {
-  tag_value   = google_tags_tag_value.workspace_tag_value.id
-  policy_data = data.google_iam_policy.tags_usage.policy_data
+resource "google_tags_tag_value_iam_binding" "tag_user" {
+  tag_value = google_tags_tag_value.workspace_tag_value.id
+  role = "roles/resourcemanager.tagUser"
+  members = [
+    "serviceAccount:${google_service_account.policy_administrator.email}",
+  ]
 }
 
 # This data is solely called to force Google Cloud to activate the Storage service agent.
