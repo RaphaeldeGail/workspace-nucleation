@@ -401,11 +401,6 @@ data "google_iam_policy" "billing_management" {
   }
 }
 
-resource "google_billing_account_iam_policy" "billing_account_policy" {
-  billing_account_id = var.billing_account
-  policy_data        = data.google_iam_policy.billing_management.policy_data
-}
-
 data "google_iam_policy" "tags_usage" {
   binding {
     role = "roles/resourcemanager.tagViewer"
