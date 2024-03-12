@@ -1,7 +1,8 @@
 /**
- * # workspace_setup
+ * # workspace_nucleation
  * 
- * This module sets up a new **workspace** in a *Google Cloud Organization*.
+ * This script sets up a new **workspace** in a *Google Cloud Organization*.
+ * To get started, please see the [docs folder](docs/README.md).
  *
  */
 
@@ -37,7 +38,7 @@ resource "random_string" "workspace_uid" {
   keepers     = null
   lower       = true
   min_lower   = local.index_length / 2
-  number      = true
+  numeric      = true
   min_numeric = local.index_length / 2
   upper       = false
   special     = false
@@ -163,8 +164,12 @@ resource "google_kms_crypto_key" "symmetric_key" {
   name     = "${local.name}-symmetric-key"
   key_ring = google_kms_key_ring.workspace_keyring.id
   purpose  = "ENCRYPT_DECRYPT"
-  # 30 days rotation period in seconds
-  rotation_period = "2592000s"
+  # 365 days rotation period in seconds
+  rotation_period = "31536000s"
+
+  # First key version is automatically created when a key is created.
+  # you can disable this feature with the extra arguments
+  # skip_initial_version_creation = true
 
   labels = merge(local.labels, { uid = random_string.workspace_uid.result })
 
@@ -175,10 +180,6 @@ resource "google_kms_crypto_key" "symmetric_key" {
   lifecycle {
     prevent_destroy = false
   }
-}
-
-resource "google_kms_crypto_key_version" "key_instance" {
-  crypto_key = google_kms_crypto_key.symmetric_key.id
 }
 
 resource "google_dns_managed_zone" "workspace_dns_zone" {

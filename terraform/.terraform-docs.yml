@@ -27,7 +27,7 @@ content: |-
   {{ .Outputs -}}
 
 output:
-  file: README.md
+  file: ../README.md
   mode: replace
   template: |-
     <!-- BEGIN_TF_DOCS -->
