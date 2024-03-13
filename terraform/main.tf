@@ -38,7 +38,7 @@ resource "random_string" "workspace_uid" {
   keepers     = null
   lower       = true
   min_lower   = local.index_length / 2
-  numeric      = true
+  number      = true
   min_numeric = local.index_length / 2
   upper       = false
   special     = false
