@@ -12,7 +12,7 @@ output "workspace_bucket_name" {
 
 output "dns_registrar_setup" {
   value = {
-    domain_name  = google_dns_managed_zone.dns_name
+    domain_name  = google_dns_managed_zone.workspace_dns_zone.dns_name
     name_servers = google_dns_managed_zone.workspace_dns_zone.name_servers
     ds_record    = data.google_dns_keys.workspace_dns_keys.key_signing_keys[0].ds_record
   }
