@@ -345,7 +345,7 @@ data "google_iam_policy" "administrators_impersonation" {
   binding {
     role = "roles/iam.workloadIdentityUser"
     members = [
-      "principalSet://iam.googleapis.com/${organization_identities}/attribute.terraform_project_id/${tfc_project}",
+      "principalSet://iam.googleapis.com/${var.organization_identities}/attribute.terraform_project_id/${var.tfc_project}",
     ]
   }
 }
