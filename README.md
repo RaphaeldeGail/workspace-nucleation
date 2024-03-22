@@ -8,9 +8,9 @@ To get started, please see the [docs folder](docs/README.md).
 
 | Name | Version |
 |------|---------|
-| terraform | ~> 1.2.0 |
-| google | ~> 4.53.1 |
-| random | ~> 3.1.0 |
+| terraform | ~> 1.7.5 |
+| google | ~> 5.21.0 |
+| random | ~> 3.6.0 |
 
 ## Modules
 

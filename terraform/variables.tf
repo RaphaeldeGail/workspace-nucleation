@@ -41,24 +41,41 @@ variable "customer_directory" {
 }
 
 variable "admin_group" {
-  type = string
+  type        = string
   description = "Email for administrators group."
 }
 
 variable "policy_group" {
-  type = string
+  type        = string
   description = "Email for policy administrators group."
 }
 
 variable "finops_group" {
-  type = string
+  type        = string
   description = "Email for finops group."
 }
-
 
 variable "budget_allowed" {
   type        = number
   description = "The monthly amount allowed for the workspace. Must be an integer."
+  nullable    = false
+}
+
+variable "billing_group" {
+  type        = string
+  description = "The name of the Google group with billing usage authorization."
+  nullable    = false
+}
+
+variable "organization_identities" {
+  type        = string
+  description = "The name of the workload identity pool for the oragnization."
+  nullable    = false
+}
+
+variable "tfc_project" {
+  type        = string
+  description = "The ID of the project hosting the workspace in Terraform Cloud."
   nullable    = false
 }
 

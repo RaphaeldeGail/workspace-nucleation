@@ -1,6 +1,6 @@
 formatter: "markdown table" # this is required
 
-version: "0.16.0"
+version: "0.17.0"
 
 header-from: main.tf
 footer-from: ""

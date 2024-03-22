@@ -7,15 +7,15 @@
  */
 
 terraform {
-  required_version = "~> 1.2.0"
+  required_version = "~> 1.7.5"
   required_providers {
     google = {
       source  = "hashicorp/google"
-      version = "~> 4.53.1"
+      version = "~> 5.21.0"
     }
     random = {
       source  = "hashicorp/random"
-      version = "~> 3.1.0"
+      version = "~> 3.6.0"
     }
   }
 }
@@ -38,7 +38,7 @@ resource "random_string" "workspace_uid" {
   keepers     = null
   lower       = true
   min_lower   = local.index_length / 2
-  number      = true
+  numeric     = true
   min_numeric = local.index_length / 2
   upper       = false
   special     = false
@@ -244,6 +244,18 @@ resource "google_billing_budget" "workspace_budget" {
   }
 }
 
+resource "google_cloud_identity_group_membership" "billing_users_membership" {
+  group    = var.billing_group
+
+  preferred_member_key {
+    id = google_service_account.administrator.email
+  }
+
+  roles {
+    name = "MEMBER"
+  }
+}
+
 /**
  * Identity and Access Management
  */
@@ -330,6 +342,12 @@ data "google_iam_policy" "administrators_impersonation" {
       "group:${var.admin_group}",
     ]
   }
+  binding {
+    role = "roles/iam.workloadIdentityUser"
+    members = [
+      "principalSet://iam.googleapis.com/${organization_identities}/attribute.terraform_project_id/${tfc_project}",
+    ]
+  }
 }
 
 resource "google_service_account_iam_policy" "administrator_service_account_policy" {
@@ -404,7 +422,7 @@ data "google_iam_policy" "billing_management" {
 
 resource "google_tags_tag_value_iam_binding" "tag_viewer" {
   tag_value = google_tags_tag_value.workspace_tag_value.id
-  role = "roles/resourcemanager.tagViewer"
+  role      = "roles/resourcemanager.tagViewer"
   members = [
     "group:${var.policy_group}",
     "serviceAccount:${google_service_account.policy_administrator.email}"
@@ -413,7 +431,7 @@ resource "google_tags_tag_value_iam_binding" "tag_viewer" {
 
 resource "google_tags_tag_value_iam_binding" "tag_user" {
   tag_value = google_tags_tag_value.workspace_tag_value.id
-  role = "roles/resourcemanager.tagUser"
+  role      = "roles/resourcemanager.tagUser"
   members = [
     "serviceAccount:${google_service_account.policy_administrator.email}",
   ]
