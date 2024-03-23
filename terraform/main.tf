@@ -244,8 +244,14 @@ resource "google_billing_budget" "workspace_budget" {
   }
 }
 
+data "google_cloud_identity_group_lookup" "billing_group" {
+  group_key {
+    id = var.billing_group
+  }
+}
+
 resource "google_cloud_identity_group_membership" "billing_users_membership" {
-  group    = var.billing_group
+  group = data.google_cloud_identity_group_lookup.billing_group.name
 
   preferred_member_key {
     id = google_service_account.administrator.email
