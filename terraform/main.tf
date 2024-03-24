@@ -299,10 +299,19 @@ resource "tfe_variable" "project" {
   variable_set_id = tfe_variable_set.auth_varset.id
 }
 
+resource "tfe_variable" "folder" {
+  key             = "folder"
+  value           = google_folder.workspace_folder.id
+  category        = "terraform"
+  sensitive       = true
+  description     = "The ID of the workspace folder."
+  variable_set_id = tfe_variable_set.auth_varset.id
+}
+
 resource "tfe_variable" "run_account" {
   key             = "TFC_GCP_RUN_SERVICE_ACCOUNT_EMAIL"
   value           = google_service_account.administrator.email
-  category        = "terraform"
+  category        = "env"
   sensitive       = true
   description     = "The service account email Terraform Cloud will use when authenticating to GCP."
   variable_set_id = tfe_variable_set.auth_varset.id
