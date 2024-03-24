@@ -246,7 +246,7 @@ resource "google_billing_budget" "workspace_budget" {
 
 data "google_cloud_identity_group_lookup" "billing_group" {
   group_key {
-    id = var.billing_group
+    id = var.billing_email
   }
 }
 
@@ -260,6 +260,39 @@ resource "google_cloud_identity_group_membership" "billing_users_membership" {
   roles {
     name = "MEMBER"
   }
+}
+
+resource "tfe_project" "working_project" {
+  name = local.name
+}
+
+resource "tfe_variable_set" "auth_varset" {
+  name         = "${local.name} Credentials"
+  description  = "Variable set applied to the ${local.name} workspace."
+
+}
+
+resource "tfe_project_variable_set" "binding" {
+  variable_set_id = tfe_variable_set.auth_varset.id
+  project_id      = tfe_project.working_project.id
+}
+
+resource "tfe_variable" "project" {
+  key             = "project"
+  value           = google_project.administrator_project.project_id
+  category        = "terraform"
+  sensitive       = true
+  description     = "The ID of the admin project for the workspace. Used to create projects."
+  variable_set_id = tfe_variable_set.auth_varset.id
+}
+
+resource "tfe_variable" "run_account" {
+  key             = "TFC_GCP_RUN_SERVICE_ACCOUNT_EMAIL"
+  value           = google_service_account.administrator.email
+  category        = "terraform"
+  sensitive       = true
+  description     = "The service account email Terraform Cloud will use when authenticating to GCP."
+  variable_set_id = tfe_variable_set.auth_varset.id
 }
 
 /**
@@ -351,7 +384,7 @@ data "google_iam_policy" "administrators_impersonation" {
   binding {
     role = "roles/iam.workloadIdentityUser"
     members = [
-      "principalSet://iam.googleapis.com/${var.organization_identities}/attribute.terraform_project_id/${var.tfc_project}",
+      "principalSet://iam.googleapis.com/${var.organization_identities}/attribute.terraform_project_id/${tfe_project.working_project.id}",
     ]
   }
 }

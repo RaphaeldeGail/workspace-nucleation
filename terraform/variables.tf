@@ -61,7 +61,7 @@ variable "budget_allowed" {
   nullable    = false
 }
 
-variable "billing_group" {
+variable "billing_email" {
   type        = string
   description = "The name of the Google group with billing usage authorization."
   nullable    = false
@@ -70,12 +70,6 @@ variable "billing_group" {
 variable "organization_identities" {
   type        = string
   description = "The name of the workload identity pool for the oragnization."
-  nullable    = false
-}
-
-variable "tfc_project" {
-  type        = string
-  description = "The ID of the project hosting the workspace in Terraform Cloud."
   nullable    = false
 }
 
