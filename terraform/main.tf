@@ -301,9 +301,9 @@ resource "tfe_variable" "project" {
 
 resource "tfe_variable" "folder" {
   key             = "folder"
-  value           = google_folder.workspace_folder.id
+  value           = tonumber(google_folder.workspace_folder.id)
   category        = "terraform"
-  sensitive       = true
+  sensitive       = false
   description     = "The ID of the workspace folder."
   variable_set_id = tfe_variable_set.auth_varset.id
 }
