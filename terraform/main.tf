@@ -13,6 +13,10 @@ terraform {
       source  = "hashicorp/google"
       version = "~> 5.21.0"
     }
+    tfe = {
+      source  = "hashicorp/tfe"
+      version = "~> 0.53.0"
+    }
     random = {
       source  = "hashicorp/random"
       version = "~> 3.6.0"
@@ -25,9 +29,11 @@ provider "google" {
   project = var.project
 }
 
-provider "random" {
+provider "tfe" {
 }
 
+provider "random" {
+}
 
 resource "random_string" "workspace_uid" {
   /** 
