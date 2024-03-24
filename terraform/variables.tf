@@ -16,6 +16,12 @@ variable "organization" {
   nullable    = false
 }
 
+variable "tfe_organization" {
+  type        = string
+  description = "Name of the Terraform Cloud organization hosting the workspaces."
+  nullable    = false
+}
+
 variable "workspaces_folder" {
   type        = string
   description = "The ID of the \"Workspaces\" folder that contains all subsequent workspaces."

@@ -275,10 +275,12 @@ resource "google_cloud_identity_group_membership" "billing_users_membership" {
 
 resource "tfe_project" "working_project" {
   name = local.name
+  organization = var.tfe_organization
 }
 
 resource "tfe_variable_set" "auth_varset" {
   name        = "${local.name} Credentials"
+  organization = var.tfe_organization
   description = "Variable set applied to the ${local.name} workspace."
 
 }
