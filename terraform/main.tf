@@ -60,11 +60,10 @@ resource "google_project" "administrator_project" {
   /**
    * Master project of the workspace.
    */
-  name            = "${local.name} Admin Project"
-  project_id      = substr("${local.name}-adm-${random_string.workspace_uid.result}", 0, 30)
-  folder_id       = var.workspaces_folder
-  billing_account = var.billing_account
-  labels          = merge(local.labels, { uid = random_string.workspace_uid.result })
+  name       = "${local.name} Admin Project"
+  project_id = substr("${local.name}-adm-${random_string.workspace_uid.result}", 0, 30)
+  folder_id  = var.workspaces_folder
+  labels     = merge(local.labels, { uid = random_string.workspace_uid.result })
 
   auto_create_network = false
   skip_delete         = true
@@ -75,7 +74,13 @@ resource "google_project" "administrator_project" {
       condition     = can(regex("^[a-z][a-z0-9]{1,12}[a-z]$", local.name))
       error_message = "The name of the workspace should be of the form [a-z][a-z0-9]{1,12}[a-z]."
     }
+    ignore_changes = [billing_account]
   }
+}
+
+resource "google_billing_project_info" "billing_association" {
+  project         = google_project.administrator_project.project_id
+  billing_account = var.billing_account
 }
 
 resource "google_tags_tag_binding" "workspace_tag_binding" {
@@ -273,8 +278,8 @@ resource "tfe_project" "working_project" {
 }
 
 resource "tfe_variable_set" "auth_varset" {
-  name         = "${local.name} Credentials"
-  description  = "Variable set applied to the ${local.name} workspace."
+  name        = "${local.name} Credentials"
+  description = "Variable set applied to the ${local.name} workspace."
 
 }
 
