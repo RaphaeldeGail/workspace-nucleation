@@ -65,8 +65,7 @@ resource "google_project" "administrator_project" {
   folder_id  = var.workspaces_folder
   labels     = merge(local.labels, { uid = random_string.workspace_uid.result })
 
-  auto_create_network = false
-  skip_delete         = true
+  skip_delete         = false
 
   lifecycle {
     # The workspace full name must be of the form /^[a-z][a-z0-9]{1,9}[a-z]-v[0-9]{2}$/.
