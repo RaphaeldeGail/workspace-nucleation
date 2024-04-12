@@ -274,14 +274,14 @@ resource "google_cloud_identity_group_membership" "billing_users_membership" {
 }
 
 resource "tfe_project" "working_project" {
-  name = local.name
+  name         = local.name
   organization = var.tfe_organization
 }
 
 resource "tfe_variable_set" "auth_varset" {
-  name        = "${local.name} Credentials"
+  name         = "${local.name} Credentials"
   organization = var.tfe_organization
-  description = "Variable set applied to the ${local.name} workspace."
+  description  = "Variable set applied to the ${local.name} workspace."
 
 }
 
@@ -294,7 +294,7 @@ resource "tfe_variable" "project" {
   key             = "project"
   value           = google_project.administrator_project.project_id
   category        = "terraform"
-  sensitive       = true
+  sensitive       = false
   description     = "The ID of the admin project for the workspace. Used to create projects."
   variable_set_id = tfe_variable_set.auth_varset.id
 }
@@ -305,6 +305,24 @@ resource "tfe_variable" "folder" {
   category        = "terraform"
   sensitive       = false
   description     = "The ID of the workspace folder."
+  variable_set_id = tfe_variable_set.auth_varset.id
+}
+
+resource "tfe_variable" "bucket" {
+  key             = "bucket"
+  value           = google_storage_bucket.administrator_bucket.name
+  category        = "terraform"
+  sensitive       = false
+  description     = "The name of the administrator bucket."
+  variable_set_id = tfe_variable_set.auth_varset.id
+}
+
+resource "tfe_variable" "dns_zone" {
+  key             = "dns_zone"
+  value           = google_dns_managed_zone.workspace_dns_zone.name
+  category        = "terraform"
+  sensitive       = false
+  description     = "The DNS zone for the workspace."
   variable_set_id = tfe_variable_set.auth_varset.id
 }
 

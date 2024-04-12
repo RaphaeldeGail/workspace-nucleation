@@ -22,7 +22,7 @@ No modules.
 | Name | Type |
 |------|------|
 | [google_billing_budget.workspace_budget](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/billing_budget) | resource |
-| [google_billing_project_info.default](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/billing_project_info) | resource |
+| [google_billing_project_info.billing_association](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/billing_project_info) | resource |
 | [google_cloud_identity_group_membership.billing_users_membership](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/cloud_identity_group_membership) | resource |
 | [google_dns_managed_zone.workspace_dns_zone](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/dns_managed_zone) | resource |
 | [google_dns_managed_zone_iam_policy.dns_policy](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/dns_managed_zone_iam_policy) | resource |
@@ -54,6 +54,9 @@ No modules.
 | [random_string.workspace_uid](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/string) | resource |
 | [tfe_project.working_project](https://registry.terraform.io/providers/hashicorp/tfe/latest/docs/resources/project) | resource |
 | [tfe_project_variable_set.binding](https://registry.terraform.io/providers/hashicorp/tfe/latest/docs/resources/project_variable_set) | resource |
+| [tfe_variable.bucket](https://registry.terraform.io/providers/hashicorp/tfe/latest/docs/resources/variable) | resource |
+| [tfe_variable.dns_zone](https://registry.terraform.io/providers/hashicorp/tfe/latest/docs/resources/variable) | resource |
+| [tfe_variable.folder](https://registry.terraform.io/providers/hashicorp/tfe/latest/docs/resources/variable) | resource |
 | [tfe_variable.project](https://registry.terraform.io/providers/hashicorp/tfe/latest/docs/resources/variable) | resource |
 | [tfe_variable.run_account](https://registry.terraform.io/providers/hashicorp/tfe/latest/docs/resources/variable) | resource |
 | [tfe_variable_set.auth_varset](https://registry.terraform.io/providers/hashicorp/tfe/latest/docs/resources/variable_set) | resource |
@@ -83,6 +86,7 @@ No modules.
 | policy\_group | Email for policy administrators group. | `string` | n/a |
 | project | The ID of the root project for the organization. Used to create workspaces. | `string` | n/a |
 | region | Geographical *region* for Google Cloud Platform. | `string` | n/a |
+| tfe\_organization | Name of the Terraform Cloud organization hosting the workspaces. | `string` | n/a |
 | workspaces\_folder | The ID of the "Workspaces" folder that contains all subsequent workspaces. | `string` | n/a |
 | workspaces\_tag\_key | The ID of "workspace" tag key. | `string` | n/a |
 
