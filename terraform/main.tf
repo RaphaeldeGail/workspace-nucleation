@@ -278,33 +278,52 @@ resource "tfe_project" "working_project" {
 }
 
 resource "tfe_variable_set" "auth_varset" {
-  name         = "${local.name} Credentials"
+  name         = "${title(local.name)} Credentials"
   organization = var.tfe_organization
-  description  = "Variable set applied to the ${local.name} workspace."
-
+  description  = "Authentication variables for the ${local.name} workspace."
 }
 
-resource "tfe_project_variable_set" "binding" {
+resource "tfe_variable_set" "config_varset" {
+  name         = "${title(local.name)} Configuration"
+  organization = var.tfe_organization
+  description  = "Configuration variables for the ${local.name} workspace."
+}
+
+resource "tfe_project_variable_set" "auth_binding" {
   variable_set_id = tfe_variable_set.auth_varset.id
   project_id      = tfe_project.working_project.id
 }
 
+resource "tfe_project_variable_set" "config_binding" {
+  variable_set_id = tfe_variable_set.config_varset.id
+  project_id      = tfe_project.working_project.id
+}
+
+resource "tfe_variable" "name" {
+  key             = "name"
+  value           = local.name
+  category        = "terraform"
+  sensitive       = false
+  description     = "The name of the workspace."
+  variable_set_id = tfe_variable_set.config_varset.id
+}
+
 resource "tfe_variable" "project" {
-  key             = "project"
+  key             = "admin_project"
   value           = google_project.administrator_project.project_id
   category        = "terraform"
   sensitive       = false
   description     = "The ID of the admin project for the workspace. Used to create projects."
-  variable_set_id = tfe_variable_set.auth_varset.id
+  variable_set_id = tfe_variable_set.config_varset.id
 }
 
 resource "tfe_variable" "folder" {
-  key             = "folder"
+  key             = "workspace_folder"
   value           = tonumber(google_folder.workspace_folder.folder_id)
   category        = "terraform"
   sensitive       = false
   description     = "The ID of the workspace folder."
-  variable_set_id = tfe_variable_set.auth_varset.id
+  variable_set_id = tfe_variable_set.config_varset.id
 }
 
 resource "tfe_variable" "bucket" {
@@ -313,16 +332,7 @@ resource "tfe_variable" "bucket" {
   category        = "terraform"
   sensitive       = false
   description     = "The name of the administrator bucket."
-  variable_set_id = tfe_variable_set.auth_varset.id
-}
-
-resource "tfe_variable" "dns_zone" {
-  key             = "dns_zone"
-  value           = google_dns_managed_zone.workspace_dns_zone.name
-  category        = "terraform"
-  sensitive       = false
-  description     = "The DNS zone for the workspace."
-  variable_set_id = tfe_variable_set.auth_varset.id
+  variable_set_id = tfe_variable_set.config_varset.id
 }
 
 resource "tfe_variable" "run_account" {
