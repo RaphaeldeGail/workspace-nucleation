@@ -68,7 +68,6 @@ No modules.
 | [google_iam_policy.ownership](https://registry.terraform.io/providers/hashicorp/google/latest/docs/data-sources/iam_policy) | data source |
 | [google_iam_policy.policy_administrators_impersonation](https://registry.terraform.io/providers/hashicorp/google/latest/docs/data-sources/iam_policy) | data source |
 | [google_iam_policy.storage_management](https://registry.terraform.io/providers/hashicorp/google/latest/docs/data-sources/iam_policy) | data source |
-| [google_organization.org](https://registry.terraform.io/providers/hashicorp/google/latest/docs/data-sources/organization) | data source |
 | [google_storage_project_service_account.gcs_account](https://registry.terraform.io/providers/hashicorp/google/latest/docs/data-sources/storage_project_service_account) | data source |
 
 ## Inputs
@@ -82,6 +81,7 @@ No modules.
 | customer\_directory | The ID of the Google Cloud Identity directory. | `string` | n/a |
 | finops\_group | Email for finops group. | `string` | n/a |
 | organization | Name, or domain, of the organization hosting the workspace. | `string` | n/a |
+| organization\_id | The ID of the organization hosting the workspace. | `string` | n/a |
 | organization\_identities | The name of the workload identity pool for the oragnization. | `string` | n/a |
 | policy\_group | Email for policy administrators group. | `string` | n/a |
 | project | The ID of the root project for the organization. Used to create workspaces. | `string` | n/a |

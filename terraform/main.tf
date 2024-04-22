@@ -35,10 +35,6 @@ provider "tfe" {
 provider "random" {
 }
 
-data "google_organization" "org" {
-  domain = var.organization
-}
-
 resource "random_string" "workspace_uid" {
   /** 
    * Unique ID as a random string with only lowercase letters and integers.
@@ -363,7 +359,7 @@ resource "google_project_iam_custom_role" "image_manager_role" {
 
 data "google_iam_policy" "folder_policy" {
   binding {
-    role = "organizations/${data.google_organization.org.org_id}/roles/workspace.builder"
+    role = "organizations/${var.organization_id}/roles/workspace.builder"
     members = [
       "serviceAccount:${google_service_account.administrator.email}",
     ]
