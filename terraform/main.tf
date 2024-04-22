@@ -35,6 +35,10 @@ provider "tfe" {
 provider "random" {
 }
 
+data "google_organization" "org" {
+  domain = var.organization
+}
+
 resource "random_string" "workspace_uid" {
   /** 
    * Unique ID as a random string with only lowercase letters and integers.
@@ -65,7 +69,7 @@ resource "google_project" "administrator_project" {
   folder_id  = var.workspaces_folder
   labels     = merge(local.labels, { uid = random_string.workspace_uid.result })
 
-  skip_delete         = false
+  skip_delete = false
 
   lifecycle {
     # The workspace full name must be of the form /^[a-z][a-z0-9]{1,9}[a-z]-v[0-9]{2}$/.
@@ -357,34 +361,26 @@ resource "google_project_iam_custom_role" "image_manager_role" {
   permissions = local.image_manager_permissions
 }
 
-resource "google_folder_iam_member" "folder_admin" {
-  folder = google_folder.workspace_folder.name
-  role   = "roles/resourcemanager.folderAdmin"
-  member = "serviceAccount:${google_service_account.administrator.email}"
+data "google_iam_policy" "folder_policy" {
+  binding {
+    role = "organizations/${data.google_organization.org.org_id}/roles/workspace.builder"
+    members = [
+      "serviceAccount:${google_service_account.administrator.email}",
+    ]
+  }
+  binding {
+    role = "roles/viewer"
+    members = [
+      "group:${var.admin_group}",
+      "group:${var.policy_group}",
+      "group:${var.finops_group}"
+    ]
+  }
 }
 
-resource "google_folder_iam_member" "folder_project_creator" {
-  folder = google_folder.workspace_folder.name
-  role   = "roles/resourcemanager.projectCreator"
-  member = "serviceAccount:${google_service_account.administrator.email}"
-}
-
-resource "google_folder_iam_member" "folder_admin_viewer" {
-  folder = google_folder.workspace_folder.name
-  role   = "roles/viewer"
-  member = "group:${var.admin_group}"
-}
-
-resource "google_folder_iam_member" "folder_policy_viewer" {
-  folder = google_folder.workspace_folder.name
-  role   = "roles/viewer"
-  member = "group:${var.policy_group}"
-}
-
-resource "google_folder_iam_member" "folder_finops_viewer" {
-  folder = google_folder.workspace_folder.name
-  role   = "roles/viewer"
-  member = "group:${var.finops_group}"
+resource "google_folder_iam_policy" "folder_policy" {
+  folder      = google_folder.workspace_folder.name
+  policy_data = data.google_iam_policy.folder_policy.policy_data
 }
 
 data "google_iam_policy" "ownership" {
